@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
-export default function TopLoader() {
+function TopLoaderContent() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -46,4 +46,12 @@ export default function TopLoader() {
   }, [pathname, searchParams])
 
   return null
+}
+
+export default function TopLoader() {
+  return (
+    <Suspense fallback={null}>
+      <TopLoaderContent />
+    </Suspense>
+  )
 }
