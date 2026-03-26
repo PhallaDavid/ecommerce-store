@@ -12,6 +12,15 @@ import {
   NavigationMenuLink,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AuthDialog } from "@/components/auth-dialog"
@@ -26,6 +35,16 @@ import {
   Search,
   Globe,
   MapPin,
+  LogOut,
+  Settings,
+  Package,
+  ChevronDown,
+  ChevronRight,
+  Tag,
+  Zap,
+  Sparkles,
+  Info,
+  Phone,
 } from "lucide-react"
 
 // Flag SVG components
@@ -94,6 +113,80 @@ const CambodiaFlag = () => (
   </svg>
 )
 
+interface AuthUser {
+  name: string
+  email?: string
+  phone?: string
+  avatar?: string
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+// Mobile accordion nav item
+function MobileNavSection({
+  label,
+  icon,
+  children,
+}: {
+  label: string
+  icon?: React.ReactNode
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = React.useState(false)
+  return (
+    <div className="border-b last:border-b-0">
+      <button
+        className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="flex items-center gap-2">
+          {icon}
+          {label}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="bg-muted/30 px-3 pb-2 space-y-0.5">
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MobileNavLink({
+  href,
+  onClick,
+  children,
+}: {
+  href: string
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  const router = useRouter()
+  return (
+    <button
+      className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      onClick={() => {
+        router.push(href)
+        onClick()
+      }}
+    >
+      <ChevronRight className="h-3 w-3 shrink-0" />
+      {children}
+    </button>
+  )
+}
+
 export function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
@@ -102,6 +195,42 @@ export function Header() {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = React.useState(false)
   const [isSearchDialogOpen, setIsSearchDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [authUser, setAuthUser] = React.useState<AuthUser | null>(null)
+
+  // Check localStorage for user & token on mount
+  React.useEffect(() => {
+    const token = localStorage.getItem("auth_token")
+    const userRaw = localStorage.getItem("user_data")
+    if (token && userRaw) {
+      try {
+        const user = JSON.parse(userRaw)
+        setAuthUser(user)
+      } catch {
+        setAuthUser(null)
+      }
+    }
+  }, [])
+
+  // Re-check auth when dialog closes (in case user just logged in)
+  const handleCloseAuthDialog = () => {
+    setIsAuthDialogOpen(false)
+    const token = localStorage.getItem("auth_token")
+    const userRaw = localStorage.getItem("user_data")
+    if (token && userRaw) {
+      try {
+        setAuthUser(JSON.parse(userRaw))
+      } catch {
+        setAuthUser(null)
+      }
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token")
+    localStorage.removeItem("user_data")
+    setAuthUser(null)
+    router.push("/")
+  }
 
   // Get current location
   React.useEffect(() => {
@@ -109,59 +238,37 @@ export function Header() {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords
-          
           try {
-            // Use OpenStreetMap Nominatim API for reverse geocoding
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`
             )
             const data = await response.json()
-            
             if (data && data.display_name) {
               setLocation(data.display_name)
             } else {
               setLocation(`Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`)
             }
-          } catch (error) {
+          } catch {
             setLocation(`Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`)
           }
         },
-        () => {
-          setLocation("Location unavailable")
-        }
+        () => setLocation("Location unavailable")
       )
     } else {
       setLocation("Geolocation not supported")
     }
   }, [])
 
-  const handleAccountClick = () => {
-    setIsAuthDialogOpen(true)
-  }
-
-  const handleCloseAuthDialog = () => {
-    setIsAuthDialogOpen(false)
-  }
-
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "en" ? "kh" : "en"))
   }
 
-  const categories = [
-    "Electronics",
-    "Clothing",
-    "Home & Garden",
-    "Sports",
-    "Beauty",
-    "Books",
-    "Toys",
-    "Automotive",
-  ]
+  const closeSidebar = () => setMobileMenuOpen(false)
 
   return (
     <>
       {/* Language and Location Bar */}
-      <div className="bg-primary text-white text-xs h-8 flex items-center">
+      <div className="bg-black text-white text-xs h-8 flex items-center">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-8 text-sm">
             <div className="flex items-center space-x-4">
@@ -170,23 +277,21 @@ export function Header() {
                 className="flex items-center space-x-2 hover:text-gray-100 text-white transition-colors"
               >
                 {language === "en" ? <USFlag /> : <CambodiaFlag />}
-                <span className="truncate"  > {language === "en" ? "English" : "ខ្មែរ (Khmer)"}</span>
+                <span className="truncate">{language === "en" ? "English" : "ខ្មែរ (Khmer)"}</span>
               </button>
             </div>
             <div className="flex items-center space-x-2 text-white">
               <MapPin className="h-4 w-4" />
-              <span className="truncate w-[200px]">
-  {location}
-</span>
+              <span className="truncate w-[200px]">{location}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
-      <header className="sticky  top-0 z-50 w-full border  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-12  items-center justify-between">
+          <div className="flex h-12 items-center justify-between">
 
             {/* Logo */}
             <div className="flex items-center">
@@ -210,105 +315,503 @@ export function Header() {
             </div>
 
             {/* Action Icons */}
-            <div  className="flex items-center space-x-1">
-              <Button variant="ghost" size="icon" aria-label="Search" className="inline-flex md:hidden rounded-full" onClick={() => setIsSearchDialogOpen(true)}>
-                <Search className="h-4 w-4" />
-                <span className="sr-only">Search</span>
-              </Button>
-              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Favourites">
-                <Heart className="h-5 w-5" />
-                <span className="sr-only">Favourites</span>
-              </Button>
-
-              <Button variant="ghost" size="icon"  className="rounded-full" aria-label="Cart">
-                <ShoppingCart className="h-5 w-5" />
-                <span className="sr-only">Cart</span>
-              </Button>
-
+            <div className="flex items-center space-x-1">
               <Button
-              className="hidden md:inline-flex rounded-full "
                 variant="ghost"
                 size="icon"
-                aria-label="Account"
-                onClick={handleAccountClick}
+                aria-label="Search"
+                className="inline-flex md:hidden rounded-full"
+                onClick={() => setIsSearchDialogOpen(true)}
               >
-                <User className="h-5 w-5" />
-                <span className="sr-only">Account</span>
+                <Search className="h-4 w-4" />
               </Button>
 
-              {/* Mobile menu toggle */}
+              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Favourites">
+                <Heart className="h-5 w-5" />
+              </Button>
+
+              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Cart">
+                <ShoppingCart className="h-5 w-5" />
+              </Button>
+
+              {/* Desktop: Avatar dropdown if logged in, else User icon */}
+              <div className="hidden md:flex">
+                {authUser ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                        <Avatar className="h-8 w-8 cursor-pointer">
+                          <AvatarImage src={authUser.avatar} alt={authUser.name} />
+                          <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
+                            {getInitials(authUser.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => router.push("/profile")}>
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push("/orders")}>
+                        <Package className="mr-2 h-4 w-4" />
+                        My Orders
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push("/settings")}>
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full"
+                    aria-label="Account"
+                    onClick={() => setIsAuthDialogOpen(true)}
+                  >
+                    <User className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Mobile menu toggle — only opens sidebar on click */}
               <Button
                 variant="ghost"
                 size="icon"
                 className="md:hidden rounded-full"
-                onClick={() => setMobileMenuOpen((prev) => !prev)}
-                aria-label="Toggle menu"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open menu"
               >
-                {mobileMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
+                <Menu className="h-6 w-6" />
               </Button>
             </div>
-
           </div>
 
-          {/* Mobile Navigation */}
-          <div className={`md:hidden fixed inset-0 right-0 z-50 w-full bg-white  transition-transform duration-300 ease-in-out ${
-            mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}>
-            <div className="flex flex-col ">
-              <div className="flex items-center justify-between p-2 ">
-                <span className="font-semibold">Menu</span>
-                <Button
-                  variant="ghost"
-                  className="rounded-full"
-                  size="icon"
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-label="Close menu"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-              <div  className="flex-1 bg-white overflow-y-auto h-full py-4">
-                <div className="space-y-2 px-4">
-                  <Button variant="ghost" size="icon" aria-label="Search" className="w-full p-2 justify-start">
-                    <Search className="h-4 w-4 mr-2" />
-                    Search
-                  </Button>
-                  <Button variant="ghost" size="icon" aria-label="Favourites" className="w-full p-2 justify-start">
-                    <Heart className="h-4 w-4 mr-2" />
-                    Favourites
-                  </Button>
-                  <Button variant="ghost" size="icon" aria-label="Cart" className="w-full p-2 justify-start">
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    Cart
-                  </Button>
-                  <Button variant="ghost" size="icon" aria-label="Account" className="w-full p-2 justify-start" onClick={handleAccountClick}>
-                    <User className="h-4 w-4 mr-2" />
-                    Account
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* ── Mobile Sidebar ── */}
           {/* Overlay */}
           {mobileMenuOpen && (
-            <div 
-              className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-              onClick={() => setMobileMenuOpen(false)}
+            <div
+              className="md:hidden fixed inset-0 bg-black/50 z-40"
+              onClick={closeSidebar}
             />
           )}
 
+          <div
+            className={`md:hidden fixed top-0 right-0 z-50 h-screen w-full  bg-background border-l shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
+              mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            {/* Sidebar Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+              <span className="font-semibold text-sm">Menu</span>
+              <Button
+                variant="ghost"
+                className="rounded-full"
+                size="icon"
+                onClick={closeSidebar}
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* User info if logged in */}
+            {authUser && (
+              <div className="flex items-center gap-3 px-4 py-3 shrink-0">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={authUser.avatar} alt={authUser.name} />
+                  <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
+                    {getInitials(authUser.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium truncate">{authUser.name}</span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {authUser.email || authUser.phone}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Sidebar Nav Items */}
+            <div className="flex-1 overflow-y-auto">
+
+              {/* ── Simple links ── */}
+              <div className="">
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  onClick={() => { router.push("/"); closeSidebar() }}
+                >
+                  Home
+                </button>
+              </div>
+
+              {/* ── Categories ── */}
+              <MobileNavSection label="Categories" icon={<Tag className="h-4 w-4" />}>
+                {/* Electronics */}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                  Electronics
+                </p>
+                <MobileNavLink href="/categories/electronics/smartphones" onClick={closeSidebar}>Smartphones</MobileNavLink>
+                <MobileNavLink href="/categories/electronics/laptops" onClick={closeSidebar}>Laptops</MobileNavLink>
+                <MobileNavLink href="/categories/electronics/tablets" onClick={closeSidebar}>Tablets</MobileNavLink>
+                <MobileNavLink href="/categories/electronics/accessories" onClick={closeSidebar}>Accessories</MobileNavLink>
+
+                {/* Clothing */}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                  Clothing
+                </p>
+                <MobileNavLink href="/categories/clothing/men" onClick={closeSidebar}>Men's Clothing</MobileNavLink>
+                <MobileNavLink href="/categories/clothing/women" onClick={closeSidebar}>Women's Clothing</MobileNavLink>
+                <MobileNavLink href="/categories/clothing/kids" onClick={closeSidebar}>Kids Clothing</MobileNavLink>
+                <MobileNavLink href="/categories/clothing/shoes" onClick={closeSidebar}>Shoes & Footwear</MobileNavLink>
+
+                {/* Home & Garden */}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                  Home & Garden
+                </p>
+                <MobileNavLink href="/categories/home/furniture" onClick={closeSidebar}>Furniture</MobileNavLink>
+                <MobileNavLink href="/categories/home/decor" onClick={closeSidebar}>Home Decor</MobileNavLink>
+                <MobileNavLink href="/categories/home/kitchen" onClick={closeSidebar}>Kitchen & Dining</MobileNavLink>
+                <MobileNavLink href="/categories/home/garden" onClick={closeSidebar}>Garden & Outdoor</MobileNavLink>
+
+                {/* Beauty & Health */}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                  Beauty & Health
+                </p>
+                <MobileNavLink href="/categories/beauty/skincare" onClick={closeSidebar}>Skincare</MobileNavLink>
+                <MobileNavLink href="/categories/beauty/cosmetics" onClick={closeSidebar}>Cosmetics</MobileNavLink>
+                <MobileNavLink href="/categories/beauty/fragrances" onClick={closeSidebar}>Fragrances</MobileNavLink>
+                <MobileNavLink href="/categories/beauty/health" onClick={closeSidebar}>Health & Wellness</MobileNavLink>
+
+                {/* Sports & Outdoors */}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                  Sports & Outdoors
+                </p>
+                <MobileNavLink href="/categories/sports/fitness" onClick={closeSidebar}>Fitness Equipment</MobileNavLink>
+                <MobileNavLink href="/categories/sports/outdoor" onClick={closeSidebar}>Outdoor Gear</MobileNavLink>
+                <MobileNavLink href="/categories/sports/cycling" onClick={closeSidebar}>Cycling</MobileNavLink>
+                <MobileNavLink href="/categories/sports/water-sports" onClick={closeSidebar}>Water Sports</MobileNavLink>
+              </MobileNavSection>
+
+              {/* ── Brands ── */}
+              <MobileNavSection label="Brands" icon={<Sparkles className="h-4 w-4" />}>
+                <MobileNavLink href="/brands/apple" onClick={closeSidebar}>Apple</MobileNavLink>
+                <MobileNavLink href="/brands/nike" onClick={closeSidebar}>Nike</MobileNavLink>
+                <MobileNavLink href="/brands/samsung" onClick={closeSidebar}>Samsung</MobileNavLink>
+                <MobileNavLink href="/brands/adidas" onClick={closeSidebar}>Adidas</MobileNavLink>
+                <MobileNavLink href="/brands/sony" onClick={closeSidebar}>Sony</MobileNavLink>
+              </MobileNavSection>
+
+              {/* ── Simple links ── */}
+              <div className="border-b">
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  onClick={() => { router.push("/deals"); closeSidebar() }}
+                >
+                  <Zap className="h-4 w-4" />
+                  Deals
+                </button>
+              </div>
+              <div className="border-b">
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  onClick={() => { router.push("/new-arrivals"); closeSidebar() }}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  New Arrivals
+                </button>
+              </div>
+              <div className="border-b">
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  onClick={() => { router.push("/about"); closeSidebar() }}
+                >
+                  <Info className="h-4 w-4" />
+                  About Us
+                </button>
+              </div>
+              <div className="border-b">
+                <button
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  onClick={() => { router.push("/contact"); closeSidebar() }}
+                >
+                  <Phone className="h-4 w-4" />
+                  Contact
+                </button>
+              </div>
+
+              {/* ── Account section ── */}
+              <div className="px-3 py-3 space-y-1">
+                {authUser ? (
+                  <>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pb-1 pt-2">
+                      Account
+                    </p>
+                    <button
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
+                      onClick={() => { router.push("/profile"); closeSidebar() }}
+                    >
+                      <User className="h-4 w-4" />
+                      Profile
+                    </button>
+                    <button
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
+                      onClick={() => { router.push("/orders"); closeSidebar() }}
+                    >
+                      <Package className="h-4 w-4" />
+                      My Orders
+                    </button>
+                    <button
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
+                      onClick={() => { router.push("/settings"); closeSidebar() }}
+                    >
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pb-1 pt-2">
+                      Account
+                    </p>
+                    <button
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
+                      onClick={() => { setIsAuthDialogOpen(true); closeSidebar() }}
+                    >
+                      <User className="h-4 w-4" />
+                      Sign In
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Sidebar Footer — Logout */}
+            {authUser && (
+              <div className="shrink-0 border-t px-3 py-3">
+                <button
+                  className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  onClick={() => { handleLogout(); closeSidebar() }}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
+      {/* Navigation Menu — desktop only */}
+      <nav className="bg-white pt-4 hidden md:block">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <NavigationMenu className="w-full">
+            <NavigationMenuList className="justify-center space-x-8">
+              <NavigationMenuItem>
+                <NavigationMenuLink href="/" className={navigationMenuTriggerStyle()}>
+                  Home
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="text-sm font-medium">Categories</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid gap-3 p-4 w-[600px] lg:w-[700px] lg:grid-cols-[.75fr_1fr]">
+                    <div className="grid gap-3">
+                      <div className="grid gap-3">
+                        <NavigationMenuLink asChild>
+                          <Link
+                            href="/categories/electronics"
+                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          >
+                            <div className="mb-2 mt-4 text-lg font-medium">
+                              Electronics
+                            </div>
+                            <p className="text-sm leading-tight text-muted-foreground">
+                              Latest smartphones, laptops, and gadgets
+                            </p>
+                          </Link>
+                        </NavigationMenuLink>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground">Electronics</h4>
+                        <div className="space-y-1">
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/electronics/smartphones" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Smartphones</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/electronics/laptops" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Laptops</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/electronics/tablets" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Tablets</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/electronics/accessories" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Accessories</Link>
+                          </NavigationMenuLink>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground">Clothing</h4>
+                        <div className="space-y-1">
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/clothing/men" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Men's Clothing</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/clothing/women" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Women's Clothing</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/clothing/kids" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Kids Clothing</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/clothing/shoes" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Shoes & Footwear</Link>
+                          </NavigationMenuLink>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground">Home & Garden</h4>
+                        <div className="space-y-1">
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/home/furniture" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Furniture</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/home/decor" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Home Decor</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/home/kitchen" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Kitchen & Dining</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/home/garden" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Garden & Outdoor</Link>
+                          </NavigationMenuLink>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground">Beauty & Health</h4>
+                        <div className="space-y-1">
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/beauty/skincare" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Skincare</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/beauty/cosmetics" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Cosmetics</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/beauty/fragrances" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Fragrances</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/beauty/health" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Health & Wellness</Link>
+                          </NavigationMenuLink>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground">Sports & Outdoors</h4>
+                        <div className="space-y-1">
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/sports/fitness" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Fitness Equipment</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/sports/outdoor" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Outdoor Gear</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/sports/cycling" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Cycling</Link>
+                          </NavigationMenuLink>
+                          <NavigationMenuLink asChild>
+                            <Link href="/categories/sports/water-sports" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Water Sports</Link>
+                          </NavigationMenuLink>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="text-sm font-medium">Brands</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid gap-3 p-4 w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
+                    <div className="grid gap-3">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          href="/brands/apple"
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                        >
+                          <div className="mb-2 mt-4 text-lg font-medium">Apple</div>
+                          <p className="text-sm leading-tight text-muted-foreground">Premium electronics and devices</p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <NavigationMenuLink asChild>
+                        <Link href="/brands/nike" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                          <div className="text-sm font-medium leading-none">Nike</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Athletic footwear and apparel</p>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link href="/brands/samsung" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                          <div className="text-sm font-medium leading-none">Samsung</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Electronics and smart devices</p>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link href="/brands/adidas" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                          <div className="text-sm font-medium leading-none">Adidas</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Sportswear and lifestyle products</p>
+                        </Link>
+                      </NavigationMenuLink>
+                      <NavigationMenuLink asChild>
+                        <Link href="/brands/sony" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                          <div className="text-sm font-medium leading-none">Sony</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Audio, gaming, and entertainment</p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </div>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink href="/deals" className={navigationMenuTriggerStyle()}>
+                  Deals
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink href="/new-arrivals" className={navigationMenuTriggerStyle()}>
+                  New Arrivals
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink href="/about" className={navigationMenuTriggerStyle()}>
+                  About Us
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink href="/contact" className={navigationMenuTriggerStyle()}>
+                  Contact
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+      </nav>
+
       {/* Authentication Dialog */}
-      <AuthDialog
-        isOpen={isAuthDialogOpen}
-        onClose={handleCloseAuthDialog}
-      />
+      <AuthDialog isOpen={isAuthDialogOpen} onClose={handleCloseAuthDialog} />
 
       {/* Search Dialog */}
       <SearchDialog

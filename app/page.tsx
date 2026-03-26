@@ -35,9 +35,9 @@ function useCarouselDots(slidesLength: number) {
 
 export default function Home() {
   const slides = [
-    { color: "bg-red-500", text: "Slide 1" },
-    { color: "bg-green-500", text: "Slide 2" },
-    { color: "bg-blue-500", text: "Slide 3" },
+    { color: "bg-gray-500", text: "Slide 1" },
+    { color: "bg-gray-300", text: "Slide 2" },
+    { color: "bg-gray-100", text: "Slide 3" },
   ];
 
   const { activeIndex, setActiveIndex, apiRef, scrollToSlide, isTransitioning } = useCarouselDots(slides.length);
@@ -59,11 +59,11 @@ export default function Home() {
 
   return (
     <div 
-      className="flex justify-center py-6 px-4 md:px-0"
+      className="flex justify-center py-6  md:px-0"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="w-full max-w-7xl relative">
+      <div className="w-full max-w-7xl px-4 lg:px-8 relative">
         <Carousel
           className="w-full"
           setApi={(api) => {
@@ -79,7 +79,7 @@ export default function Home() {
             {slides.map((slide, index) => (
               <CarouselItem key={index}>
                 <div
-                  className={`h-48 sm:h-64 md:h-80 lg:h-96 rounded-2xl ${slide.color} flex flex-col items-center justify-center text-white text-xl md:text-3xl font-bold transition-all relative`}
+                  className={`h-48 sm:h-64 md:h-80  lg:h-96 rounded-2xl ${slide.color} flex flex-col items-center justify-center text-white text-xl md:text-3xl font-bold transition-all relative`}
                 >
                   <div className="text-center">
                     <span className="block animate-in slide-in-from-bottom-2 duration-700 delay-100">
@@ -99,7 +99,7 @@ export default function Home() {
                       <button
                         key={dotIndex}
                         onClick={() => scrollToSlide(dotIndex)}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 border-2 ${
+                        className={`w-2 h-2 rounded-full transition-all duration-300 border ${
                           activeIndex === dotIndex 
                             ? "bg-white border-white scale-110" 
                             : "bg-transparent border-white/50 hover:bg-white/20"

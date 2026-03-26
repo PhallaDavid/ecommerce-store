@@ -194,26 +194,106 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
               </p>
             </div>
 
+            {/* Email / Phone switcher for forgot password */}
+            {forgotPasswordStep === 'email' && (
+              <div className="flex rounded-md border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setInputMethod('email')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium transition-colors ${
+                    inputMethod === 'email'
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputMethod('phone')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium transition-colors ${
+                    inputMethod === 'phone'
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                  Phone
+                </button>
+              </div>
+            )}
+
             {forgotPasswordStep === 'email' ? (
               <form className="space-y-3">
                 <FieldGroup>
-                  <Field>
-                    <FieldLabel htmlFor="forgotEmailOrPhone">Email or Phone</FieldLabel>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        <Smartphone className="h-4 w-4" />
-                      </span>
-                      <Input
-                        id="forgotEmailOrPhone"
-                        type="text"
-                        placeholder="m@example.com or 012345678"
-                        required
-                        className="bg-background pl-9"
-                      />
-                    </div>
-                  </Field>
+                  {/* Email field */}
+                  {inputMethod === 'email' && (
+                    <Field>
+                      <FieldLabel htmlFor="forgotEmail">Email Address</FieldLabel>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                        </span>
+                        <Input
+                          id="forgotEmail"
+                          type="email"
+                          placeholder="m@example.com"
+                          required
+                          className="bg-background pl-9"
+                        />
+                      </div>
+                    </Field>
+                  )}
+
+                  {/* Phone field */}
+                  {inputMethod === 'phone' && (
+                    <Field>
+                      <FieldLabel htmlFor="forgotPhone">Phone Number</FieldLabel>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <Smartphone className="h-4 w-4" />
+                        </span>
+                        <Input
+                          id="forgotPhone"
+                          type="tel"
+                          placeholder="012345678"
+                          required
+                          className="bg-background pl-9"
+                        />
+                      </div>
+                    </Field>
+                  )}
+                  
                   <div className="flex gap-2 pt-1">
-                    <Button type="button" className="flex-1 h-9" onClick={() => setForgotPasswordStep('otp')}>
+                    <Button 
+                      type="button" 
+                      className="flex-1 h-9" 
+                      onClick={async () => {
+                        const inputElement = document.getElementById(inputMethod === 'email' ? 'forgotEmail' : 'forgotPhone') as HTMLInputElement
+                        const emailOrPhone = inputElement?.value.trim()
+                        
+                        if (!emailOrPhone) {
+                          setError(`Please enter your ${inputMethod}`)
+                          return
+                        }
+
+                        try {
+                          // Use correct forgot password endpoint based on input type
+                          const forgotEndpoint = inputMethod === 'email' ? '/forgot-password-otp' : '/phone/forgot-password/send'
+                          
+                          await api.post(forgotEndpoint, {
+                            ...(inputMethod === 'email' ? { email: emailOrPhone } : { phone: emailOrPhone })
+                          })
+                          
+                          console.log('Forgot password OTP sent successfully')
+                          setForgotPasswordStep('otp')
+                        } catch (error: any) {
+                          console.error('Forgot password error:', error)
+                          setError(error.response?.data?.message || 'Failed to send OTP')
+                        }
+                      }}
+                    >
                       Send OTP
                     </Button>
                     <Button type="button" variant="outline" className="flex-1 h-9" onClick={() => setIsForgotPassword(false)}>
@@ -271,7 +351,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                           // Determine if the stored emailOrPhone is email or phone
                           const isEmailInput = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pendingData.emailOrPhone)
                           
-                          // Use correct verification endpoint based on input type
+                          // For forgot password, use the forgot password verification endpoint
                           const verifyEndpoint = isEmailInput ? '/email/verify-otp' : '/phone/verify-otp'
                           
                           const response = await api.post(verifyEndpoint, {
@@ -279,12 +359,12 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                             otp
                           })
                           
-                          console.log('OTP verification successful:', response.data)
+                          console.log('Forgot password OTP verification successful:', response.data)
                           // Clear pending data and close dialog
                           localStorage.removeItem('pending_verification')
                           onClose()
                         } catch (error: any) {
-                          console.error('OTP verification failed:', error)
+                          console.error('Forgot password OTP verification failed:', error)
                           setError(error.response?.data?.message || 'Invalid OTP')
                         }
                       }}
