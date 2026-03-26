@@ -161,7 +161,7 @@ export function Header() {
   return (
     <>
       {/* Language and Location Bar */}
-      <div className="bg-black">
+      <div className="bg-green-700">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-8 text-sm">
             <div className="flex items-center space-x-4">
@@ -191,8 +191,7 @@ export function Header() {
             {/* Logo */}
             <div className="flex items-center">
               <Link href="/" className="flex items-center space-x-2">
-                <ShoppingCart className="h-6 w-6" />
-                <span className="font-bold text-xl">E-Store</span>
+                <img src="/images/logo.jpg" alt="Logo" className="h-10 w-full rounded-md" />
               </Link>
             </div>
 
@@ -241,7 +240,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden"
+                className="md:hidden rounded-full"
                 onClick={() => setMobileMenuOpen((prev) => !prev)}
                 aria-label="Toggle menu"
               >
@@ -256,14 +255,15 @@ export function Header() {
           </div>
 
           {/* Mobile Navigation */}
-          <div className={`md:hidden fixed inset-0 right-0 z-50 w-full bg-background  transition-transform duration-300 ease-in-out ${
+          <div className={`md:hidden fixed inset-0 right-0 z-50 w-full bg-white  transition-transform duration-300 ease-in-out ${
             mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}>
             <div className="flex flex-col ">
-              <div className="flex items-center justify-between p-4 ">
+              <div className="flex items-center justify-between p-2 ">
                 <span className="font-semibold">Menu</span>
                 <Button
                   variant="ghost"
+                  className="rounded-full"
                   size="icon"
                   onClick={() => setMobileMenuOpen(false)}
                   aria-label="Close menu"
@@ -271,7 +271,7 @@ export function Header() {
                   <X className="h-5 w-5" />
                 </Button>
               </div>
-              <div className="flex-1 overflow-y-auto h-full py-4">
+              <div className="flex-1 bg-white overflow-y-auto h-full py-4">
                 <div className="space-y-2 px-4">
                   <Button variant="ghost" size="icon" aria-label="Search" className="w-full justify-start">
                     <Search className="h-4 w-4 mr-2" />

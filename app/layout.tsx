@@ -24,8 +24,21 @@ const katumruyPro = Kantumruy_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Store",
-  description: "Ecommerce Store built with Next.js and Shadcn UI",
+  title: "R4kie.S ",
+  description: "R4kie.S is a ecommerce store ",
+  icons: {
+    icon: [
+      {
+        url: "/images/logo.jpg",
+        type: "image/jpeg",
+      },
+      {
+        url: "/images/logo.jpg",
+        sizes: "any",
+        type: "image/jpeg",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
