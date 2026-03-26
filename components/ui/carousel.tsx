@@ -163,6 +163,8 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       data-slot="carousel-item"
       className={cn(
         "min-w-0 shrink-0 grow-0 basis-full",
+        "transition-transform duration-500 ease-in-out",
+        "will-change-transform",
         orientation === "horizontal" ? "pl-4" : "pt-4",
         className
       )}
