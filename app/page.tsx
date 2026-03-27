@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { NewArrivalsProducts } from "@/components/NewArrivalsProducts";
 import {
   Carousel,
   CarouselContent,
@@ -103,7 +104,7 @@ export default function Home() {
             <CarouselContent>
               {slides.map((slide, index) => (
                 <CarouselItem key={index}>
-                  <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-2xl">
+                  <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-md">
                     <img
                       src={slide.img}
                       alt={`Slide ${index + 1}`}
@@ -169,15 +170,15 @@ export default function Home() {
               {categories.map(({ label, href, icon: Icon }) => (
                 <CarouselItem
                   key={label}
-                  className="basis-1/2 sm:basis-1/3 md:basis-1/4"
+                  className="basis-1/2 sm:basis-1/3  md:basis-1/6"
                 >
                   <Link
                     href={href}
-                    className="group flex w-full flex-col items-center rounded-md bg-card  transition-colors"
+                    className="group flex w-full p-2 flex-col items-center rounded-md bg-card  transition-colors"
                     aria-label={label}
                   >
                     <div className="flex w-full aspect-square items-center justify-center rounded-md bg-primary/8 text-primary ">
-                      <img src="/images/STU_8189-cr-450x672.jpg" alt="" className="w-full h-full rounded-md" />
+                      <img src="/images/STU_8189-cr-450x672.jpg" alt="" className="w-full h-full rounded-md hover:scale-105 transition-transform duration-300" />
                     </div>
                     <div className="mt-3 truncate text-sm font-semibold">
                       {label}
@@ -191,6 +192,8 @@ export default function Home() {
             <CarouselNext className="hidden md:inline-flex -right-6" />
           </Carousel>
         </section>
+
+        <NewArrivalsProducts />
       </div>
     </div>
   );
