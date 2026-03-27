@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Inter, Kantumruy_Pro } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import TopLoader from "@/components/TopLoader"
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
@@ -55,6 +57,8 @@ export default function RootLayout({
         <TopLoader />
         <Header />
         <main className="flex-1">{children}</main>
+        <Footer />
+        <ScrollToTop />
       </body>
     </html>
   );
