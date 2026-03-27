@@ -298,7 +298,10 @@ export function Header() {
               {/* <Link href="/" className="flex items-center space-x-2">
                 <img src="/images/logo.jpg" alt="Logo" className="h-10 w-full rounded-md" />
               </Link> */}
-              <span className="ml-2 text-lg font-bold">R4kie.S</span>
+              <div className="flex items-center flex-row" >
+              <span className="ml-2 text-xl font-bold">R </span>
+              <p className="text-sm font-medium" >4kie.S</p>
+              </div>
             </div>
 
             {/* Desktop Search Bar */}
