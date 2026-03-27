@@ -295,9 +295,10 @@ export function Header() {
 
             {/* Logo */}
             <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-2">
+              {/* <Link href="/" className="flex items-center space-x-2">
                 <img src="/images/logo.jpg" alt="Logo" className="h-10 w-full rounded-md" />
-              </Link>
+              </Link> */}
+              <span className="ml-2 text-lg font-bold">R4kie.S</span>
             </div>
 
             {/* Desktop Search Bar */}
