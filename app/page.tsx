@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { NewArrivalsProducts } from "@/components/NewArrivalsProducts";
+import { ImageBanners } from "@/components/ImageBanner";
 import {
   Carousel,
   CarouselContent,
@@ -157,7 +158,7 @@ export default function Home() {
         <section className="space-y-3">
           <div className="flex items-end justify-between">
             <h2 className="text-base font-semibold tracking-tight">Top Categories</h2>
-            <p className="text-base font-semiboldhover:text-primary hover:underline transition-colors text-muted-foreground">
+            <p  className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors">
               See All
             </p>
           </div>
@@ -194,6 +195,8 @@ export default function Home() {
         </section>
 
         <NewArrivalsProducts />
+        <ImageBanners />
+
       </div>
     </div>
   );

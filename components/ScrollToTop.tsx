@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ArrowUp, MousePointerClick } from "lucide-react"
+import { ArrowUp, MousePointerClick, Mouse  } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -33,11 +33,11 @@ export function ScrollToTop() {
         size="icon"
         variant="secondary"
         onClick={scrollToTop}
-        className="h-11 w-11 rounded-full border bg-background/90 backdrop-blur hover:bg-muted"
+        // className="h-11 w-11 rounded-full border-2 bg-background/90 backdrop-blur hover:bg-muted"
         aria-label="Scroll to top"
       >
         {/* <MousePointerClick className="h-4 w-4" /> */}
-        <ArrowUp className="h-4 w-4 " />
+        <Mouse className="h-12 w-12 " />
       </Button>
     </div>
   )

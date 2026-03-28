@@ -16,7 +16,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -26,25 +25,18 @@ import { Input } from "@/components/ui/input"
 import { AuthDialog } from "@/components/auth-dialog"
 import { SearchDialog } from "@/components/search-dialog"
 import {
-  Home,
   Heart,
   ShoppingCart,
   User,
   Menu,
   X,
   Search,
-  Globe,
   MapPin,
   LogOut,
   Settings,
   Package,
   ChevronDown,
   ChevronRight,
-  Tag,
-  Zap,
-  Sparkles,
-  Info,
-  Phone,
 } from "lucide-react"
 
 // Flag SVG components
@@ -132,24 +124,19 @@ function getInitials(name: string) {
 // Mobile accordion nav item
 function MobileNavSection({
   label,
-  icon,
   children,
 }: {
   label: string
-  icon?: React.ReactNode
   children: React.ReactNode
 }) {
   const [open, setOpen] = React.useState(false)
   return (
-    <div className="border-b last:border-b-0">
+    <div>
       <button
         className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="flex items-center gap-2">
-          {icon}
-          {label}
-        </span>
+        <span>{label}</span>
         <ChevronDown
           className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         />
@@ -175,7 +162,7 @@ function MobileNavLink({
   const router = useRouter()
   return (
     <button
-      className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      className="flex items-center w-full text-left px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
       onClick={() => {
         router.push(href)
         onClick()
@@ -295,13 +282,13 @@ export function Header() {
 
             {/* Logo */}
             <div className="flex items-center">
-              {/* <Link href="/" className="flex items-center space-x-2">
-                <img src="/images/logo.jpg" alt="Logo" className="h-10 w-full rounded-md" />
-              </Link> */}
-              <div className="flex items-center flex-row" >
-              <span className="ml-2 text-xl font-bold">R </span>
+              <Link href="/" className="flex items-center space-x-2">
+                  <div className="flex items-center flex-row" >
+              <span className=" text-xl font-bold">R </span>
               <p className="text-sm font-medium" >4kie.S</p>
               </div>
+              </Link>
+            
             </div>
 
             {/* Desktop Search Bar */}
@@ -412,13 +399,16 @@ export function Header() {
           )}
 
           <div
-            className={`md:hidden fixed top-0 right-0 z-50 h-screen w-full  bg-background border-l shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
+            className={`md:hidden fixed top-0 right-0 z-50 h-screen w-full bg-background shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
               mobileMenuOpen ? "translate-x-0" : "translate-x-full"
             }`}
           >
             {/* Sidebar Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-              <span className="font-semibold text-sm">Menu</span>
+            <div className="flex items-center justify-between px-4 py-3 shrink-0">
+              <div className="flex items-center flex-row" >
+              <span className=" text-xl font-bold">R </span>
+              <p className="text-sm font-medium" >4kie.S</p>
+              </div>
               <Button
                 variant="ghost"
                 className="rounded-full"
@@ -462,7 +452,7 @@ export function Header() {
               </div>
 
               {/* ── Categories ── */}
-              <MobileNavSection label="Categories" icon={<Tag className="h-4 w-4" />}>
+              <MobileNavSection label="Categories">
                 {/* Electronics */}
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
                   Electronics
@@ -510,7 +500,7 @@ export function Header() {
               </MobileNavSection>
 
               {/* ── Brands ── */}
-              <MobileNavSection label="Brands" icon={<Sparkles className="h-4 w-4" />}>
+              <MobileNavSection label="Brands">
                 <MobileNavLink href="/brands/apple" onClick={closeSidebar}>Apple</MobileNavLink>
                 <MobileNavLink href="/brands/nike" onClick={closeSidebar}>Nike</MobileNavLink>
                 <MobileNavLink href="/brands/samsung" onClick={closeSidebar}>Samsung</MobileNavLink>
@@ -519,41 +509,43 @@ export function Header() {
               </MobileNavSection>
 
               {/* ── Simple links ── */}
-              <div className="border-b">
+              <div>
                 <button
                   className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
                   onClick={() => { router.push("/deals"); closeSidebar() }}
                 >
-                  <Zap className="h-4 w-4" />
                   Deals
                 </button>
               </div>
-              <div className="border-b">
+              <div>
                 <button
                   className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
                   onClick={() => { router.push("/new-arrivals"); closeSidebar() }}
                 >
-                  <Sparkles className="h-4 w-4" />
                   New Arrivals
                 </button>
               </div>
-              <div className="border-b">
+              <div>
                 <button
                   className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
                   onClick={() => { router.push("/about"); closeSidebar() }}
                 >
-                  <Info className="h-4 w-4" />
                   About Us
                 </button>
               </div>
-              <div className="border-b">
+              <div>
                 <button
                   className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
                   onClick={() => { router.push("/contact"); closeSidebar() }}
                 >
-                  <Phone className="h-4 w-4" />
                   Contact
                 </button>
+                <button
+                      className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                      onClick={() => { setIsAuthDialogOpen(true); closeSidebar() }}
+                    >
+                      Sign In
+                    </button>
               </div>
 
               {/* ── Account section ── */}
@@ -567,36 +559,23 @@ export function Header() {
                       className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
                       onClick={() => { router.push("/profile"); closeSidebar() }}
                     >
-                      <User className="h-4 w-4" />
                       Profile
                     </button>
                     <button
                       className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
                       onClick={() => { router.push("/orders"); closeSidebar() }}
                     >
-                      <Package className="h-4 w-4" />
                       My Orders
                     </button>
                     <button
                       className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
                       onClick={() => { router.push("/settings"); closeSidebar() }}
                     >
-                      <Settings className="h-4 w-4" />
                       Settings
                     </button>
                   </>
                 ) : (
                   <>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pb-1 pt-2">
-                      Account
-                    </p>
-                    <button
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
-                      onClick={() => { setIsAuthDialogOpen(true); closeSidebar() }}
-                    >
-                      <User className="h-4 w-4" />
-                      Sign In
-                    </button>
                   </>
                 )}
               </div>
@@ -604,12 +583,11 @@ export function Header() {
 
             {/* Sidebar Footer — Logout */}
             {authUser && (
-              <div className="shrink-0 border-t px-3 py-3">
+              <div className="shrink-0 px-3 py-3">
                 <button
                   className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm text-red-600 hover:bg-red-50 transition-colors"
                   onClick={() => { handleLogout(); closeSidebar() }}
                 >
-                  <LogOut className="h-4 w-4" />
                   Logout
                 </button>
               </div>

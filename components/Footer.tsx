@@ -25,12 +25,12 @@ const socialLinks = [
   { label: "GitHub", href: "https://github.com", icon: GitHubLogoIcon },
 ]
 
-const paymentMethods = [
-  { label: "Visa", icon: CreditCard },
-  { label: "Mastercard", icon: CreditCard },
-  { label: "PayPal", icon: Wallet },
-  { label: "Apple Pay", icon: Wallet },
-]
+// const paymentMethods = [
+//   { label: "Visa", icon: CreditCard },
+//   { label: "Mastercard", icon: CreditCard },
+//   { label: "PayPal", icon: Wallet },
+//   { label: "Apple Pay", icon: Wallet },
+// ]
 
 export function Footer() {
   const year = new Date().getFullYear()
@@ -41,19 +41,14 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 md:grid-cols-4">
           <div className="space-y-3 md:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2">
-              <img
-                src="/images/logo.jpg"
-                alt="R4kie.S"
-                className="h-10 w-full rounded-md object-cover"
-              />
+             <div className="flex items-center flex-row" >
+              <span className=" text-xl font-bold">R </span>
+              <p className="text-sm font-medium" >4kie.S</p>
+              </div>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Modern essentials, fast delivery, and secure checkout — built for everyday shopping.
             </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="h-4 w-4" />
-              <span>Secure payments</span>
-            </div>
           </div>
 
           <div className="space-y-3">
@@ -94,20 +89,7 @@ export function Footer() {
 
           <div className="space-y-3">
             <h3 className="text-sm font-semibold">Payment Methods</h3>
-            <ul className="flex flex-wrap gap-2">
-              {paymentMethods.map(({ label, icon: Icon }) => (
-                <li
-                  key={label}
-                  className="inline-flex items-center gap-2 rounded-md border bg-muted/30 px-2.5 py-1.5 text-xs font-medium text-foreground"
-                >
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <span>{label}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="text-xs text-muted-foreground">
-              More options available at checkout.
-            </p>
+          <img src="/images/we-accept-payment–for-web-footer – v2.png" alt="" />
           </div>
         </div>
 
@@ -115,19 +97,8 @@ export function Footer() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            © {year} R4kie.S. All rights reserved.
+            © {year} Phalla David. All rights reserved.
           </p>
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
-            <Link href="/contact" className="text-muted-foreground hover:text-foreground transition-colors">
-              Support
-            </Link>
-            <a
-              href="mailto:info@r4kie.store"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              info@r4kie.store
-            </a>
-          </div>
         </div>
       </div>
     </footer>

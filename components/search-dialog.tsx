@@ -35,7 +35,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
                 placeholder="Search ..."
                 value={searchQuery}
                 onChange={(e) => onSearchQueryChange(e.target.value)}
-                className="pl-10 pr-4 rounded-full py-2 w-full text-lg"
+                className="pl-10 pr-4 rounded-md py-2 w-full text-lg"
                 autoFocus
               />
             </div>
