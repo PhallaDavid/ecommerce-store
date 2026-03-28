@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { NewArrivalsProducts } from "@/components/NewArrivalsProducts";
+import { NewCollection } from "@/components/NewCollection";
 import { ImageBanners } from "@/components/ImageBanner";
 import {
   Carousel,
@@ -159,7 +160,7 @@ export default function Home() {
           <div className="flex items-end justify-between">
             <h2 className="text-base font-semibold tracking-tight">Top Categories</h2>
             <p  className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors">
-              See All
+              Shop Now
             </p>
           </div>
 
@@ -196,6 +197,7 @@ export default function Home() {
 
         <NewArrivalsProducts />
         <ImageBanners />
+        <NewCollection />
 
       </div>
     </div>

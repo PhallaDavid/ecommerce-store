@@ -177,12 +177,19 @@ function MobileNavLink({
 export function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
   const [language, setLanguage] = React.useState("en")
   const [location, setLocation] = React.useState("")
   const [isAuthDialogOpen, setIsAuthDialogOpen] = React.useState(false)
   const [isSearchDialogOpen, setIsSearchDialogOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [authUser, setAuthUser] = React.useState<AuthUser | null>(null)
+
+  // Hydration safety: ensure sidebar is closed on mount
+  React.useEffect(() => {
+    setMounted(true)
+    setMobileMenuOpen(false)
+  }, [])
 
   // Check localStorage for user & token on mount
   React.useEffect(() => {
@@ -276,7 +283,7 @@ export function Header() {
       </div>
 
       {/* Main Header */}
-      <header className="sticky top-0 z-50 w-full border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-12 items-center justify-between">
 
@@ -391,7 +398,7 @@ export function Header() {
 
           {/* ── Mobile Sidebar ── */}
           {/* Overlay */}
-          {mobileMenuOpen && (
+          {mounted && mobileMenuOpen && (
             <div
               className="md:hidden fixed inset-0 bg-black/50 z-40"
               onClick={closeSidebar}
@@ -400,7 +407,7 @@ export function Header() {
 
           <div
             className={`md:hidden fixed top-0 right-0 z-50 h-screen w-full bg-background shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
-              mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+              mounted && mobileMenuOpen ? "translate-x-0" : "translate-x-full"
             }`}
           >
             {/* Sidebar Header */}
@@ -616,7 +623,7 @@ export function Header() {
                         <NavigationMenuLink asChild>
                           <Link
                             href="/categories/electronics"
-                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
                           >
                             <div className="mb-2 mt-4 text-lg font-medium">
                               Electronics
@@ -727,7 +734,7 @@ export function Header() {
                       <NavigationMenuLink asChild>
                         <Link
                           href="/brands/apple"
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
                         >
                           <div className="mb-2 mt-4 text-lg font-medium">Apple</div>
                           <p className="text-sm leading-tight text-muted-foreground">Premium electronics and devices</p>

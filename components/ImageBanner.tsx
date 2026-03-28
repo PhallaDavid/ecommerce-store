@@ -2,17 +2,29 @@
 
 export function ImageBanners() {
   return (
-    <section className="space-y-3">
-      <div className="flex w-full h-[250px] md:h-[400px]">
+    <section className="w-full ">
+      <div className="flex w-full gap-4 h-full">
         <img
           src="https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/banner/2026/TEN11/Mar/KNY%20Sale/MAR26-CatFeed%20-Women-BestSellers-WEB%20HP.jpg"
           alt="Image 1"
-          className="w-full h-full flex-1 object-cover"
+          className="w-1/2 h-full object-cover"
         />
         <img
           src="https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/banner/2026/TEN11/Mar/KNY%20Sale/MAR26-CatFeed%20-Women-BestSellers-WEB%20HP.jpg"
           alt="Image 2"
-          className="w-full h-full flex-1 object-cover"
+          className="w-1/2 h-full object-cover"
+        />
+      </div>
+      <div className="flex w-full gap-4 h-full">
+        <img
+          src="https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/banner/2026/TEN11/Mar/KNY%20Sale/MAR26-CatFeed%20-Women-Casuals-WEB%20HP.jpg"
+          alt="Image 1"
+          className="w-1/2 h-full object-cover"
+        />
+        <img
+          src="https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/banner/2026/TEN11/Mar/KNY%20Sale/MAR26-CatFeed%20-Women-Partywear-WEB%20HP.jpg"
+          alt="Image 2"
+          className="w-1/2 h-full object-cover"
         />
       </div>
     </section>

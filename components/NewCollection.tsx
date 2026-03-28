@@ -72,11 +72,11 @@ function formatPrice(value: number) {
   }).format(value)
 }
 
-export function NewArrivalsProducts() {
+export function NewCollection() {
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="text-base font-semibold tracking-tight">New Arrivals</h2>
+        <h2 className="text-base font-semibold tracking-tight">New Collections</h2>
         <Link
           href="/?sort=new"
           className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors"
