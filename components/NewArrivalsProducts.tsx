@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Heart } from "lucide-react"
+import { Heart, ShoppingCart } from "lucide-react"
 
 import {
   Carousel,
@@ -12,6 +12,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
+import { addToCart, getFavourites, isFavourite, subscribeStore, toggleFavourite } from "@/lib/store"
 
 const products = [
   {
@@ -73,6 +74,18 @@ function formatPrice(value: number) {
 }
 
 export function NewArrivalsProducts() {
+  const [favs, setFavs] = React.useState<Record<string, boolean>>({})
+
+  React.useEffect(() => {
+    setFavs(
+      Object.fromEntries(products.map((p) => [p.id, isFavourite(p.id)]))
+    )
+    return subscribeStore(() => {
+      const favSet = new Set(getFavourites().map((f) => f.id))
+      setFavs(Object.fromEntries(products.map((p) => [p.id, favSet.has(p.id)])))
+    })
+  }, [])
+
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
@@ -114,30 +127,66 @@ export function NewArrivalsProducts() {
                       />
                     </div>
 
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon-sm"
-                      className="absolute right-3 top-3 rounded-full bg-background/85 backdrop-blur border cursor-pointer hover:bg-background"
-                      aria-label="Add to wishlist"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                      }}
-                    >
-                      <Heart className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    className="absolute right-3 top-3 rounded-full bg-background/85 backdrop-blur border cursor-pointer hover:bg-background"
+                    aria-label="Add to wishlist"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      toggleFavourite({
+                        id: product.id,
+                        name: product.name,
+                        href: product.href,
+                        image: product.image,
+                        price: product.price,
+                        compareAt: product.compareAt,
+                      })
+                      setFavs((prev) => ({ ...prev, [product.id]: !prev[product.id] }))
+                    }}
+                  >
+                    <Heart className={favs[product.id] ? "h-4 w-4 fill-primary text-primary" : "h-4 w-4"} />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    className="absolute right-3 top-14 rounded-full bg-background/85 backdrop-blur border cursor-pointer hover:bg-background"
+                    aria-label="Add to cart"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      addToCart(
+                        {
+                          id: product.id,
+                          name: product.name,
+                          href: product.href,
+                          image: product.image,
+                          price: product.price,
+                        },
+                        1
+                      )
+                    }}
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                  </Button>
+                </div>
 
                   <div className="p-3">
                     <div className="truncate text-sm font-semibold">{product.name}</div>
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-semibold text-primary">
                           {formatPrice(product.price)}
                         </span>
-                        <span className="text-sm font-semibold text-red-600">-{
-                          discountPercent}%</span>
+                        {discountPercent > 0 ? (
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                            -{discountPercent}%
+                          </span>
+                        ) : null}
                         <span className="text-xs text-muted-foreground line-through">
                           {formatPrice(product.compareAt)}
                         </span>
@@ -156,4 +205,3 @@ export function NewArrivalsProducts() {
     </section>
   )
 }
-

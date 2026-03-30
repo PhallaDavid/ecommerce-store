@@ -24,6 +24,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AuthDialog } from "@/components/auth-dialog"
 import { SearchDialog } from "@/components/search-dialog"
+import { CartSheet } from "@/components/CartSheet"
+import { FavouritesSheet } from "@/components/FavouritesSheet"
+import { getCart, getFavourites, subscribeStore } from "@/lib/store"
 import {
   Heart,
   ShoppingCart,
@@ -182,14 +185,28 @@ export function Header() {
   const [location, setLocation] = React.useState("")
   const [isAuthDialogOpen, setIsAuthDialogOpen] = React.useState(false)
   const [isSearchDialogOpen, setIsSearchDialogOpen] = React.useState(false)
+  const [isFavouritesOpen, setIsFavouritesOpen] = React.useState(false)
+  const [isCartOpen, setIsCartOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [authUser, setAuthUser] = React.useState<AuthUser | null>(null)
+  const [favCount, setFavCount] = React.useState(0)
+  const [cartCount, setCartCount] = React.useState(0)
 
   // Hydration safety: ensure sidebar is closed on mount
   React.useEffect(() => {
     setMounted(true)
     setMobileMenuOpen(false)
   }, [])
+
+  React.useEffect(() => {
+    if (!mounted) return
+    const refresh = () => {
+      setFavCount(getFavourites().length)
+      setCartCount(getCart().reduce((sum, it) => sum + it.qty, 0))
+    }
+    refresh()
+    return subscribeStore(refresh)
+  }, [mounted])
 
   // Check localStorage for user & token on mount
   React.useEffect(() => {
@@ -324,12 +341,34 @@ export function Header() {
                 <Search className="h-4 w-4" />
               </Button>
 
-              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Favourites">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full relative"
+                aria-label="Favourites"
+                onClick={() => setIsFavouritesOpen(true)}
+              >
                 <Heart className="h-5 w-5" />
+                {favCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold leading-5 text-center">
+                    {favCount > 99 ? "99+" : favCount}
+                  </span>
+                ) : null}
               </Button>
 
-              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Cart">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full relative"
+                aria-label="Cart"
+                onClick={() => setIsCartOpen(true)}
+              >
                 <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold leading-5 text-center">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                ) : null}
               </Button>
 
               {/* Desktop: Avatar dropdown if logged in, else User icon */}
@@ -809,6 +848,9 @@ export function Header() {
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
       />
+
+      <FavouritesSheet open={isFavouritesOpen} onOpenChange={setIsFavouritesOpen} />
+      <CartSheet open={isCartOpen} onOpenChange={setIsCartOpen} />
     </>
   )
 }

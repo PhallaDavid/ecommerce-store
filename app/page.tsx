@@ -56,14 +56,14 @@ export default function Home() {
   ];
 
   const categories = [
-    { label: "Fashion", icon: Shirt, href: "/?category=fashion" },
-    { label: "Electronics", icon: Smartphone, href: "/?category=electronics" },
-    { label: "Accessories", icon: Watch, href: "/?category=accessories" },
-    { label: "Audio", icon: Headphones, href: "/?category=audio" },
-    { label: "Computers", icon: Laptop, href: "/?category=computers" },
-    { label: "Gaming", icon: Gamepad2, href: "/?category=gaming" },
-    { label: "New Arrivals", icon: Sparkles, href: "/?category=new" },
-    { label: "Essentials", icon: ShoppingBag, href: "/?category=essentials" },
+    { label: "Fashion", icon: Shirt, href: "/categories/fashion" },
+    { label: "Electronics", icon: Smartphone, href: "/categories/electronics" },
+    { label: "Accessories", icon: Watch, href: "/categories/accessories" },
+    { label: "Audio", icon: Headphones, href: "/categories/audio" },
+    { label: "Computers", icon: Laptop, href: "/categories/computers" },
+    { label: "Gaming", icon: Gamepad2, href: "/categories/gaming" },
+    { label: "New Arrivals", icon: Sparkles, href: "/categories/new" },
+    { label: "Essentials", icon: ShoppingBag, href: "/categories/essentials" },
   ] as const;
 
   const { activeIndex, setActiveIndex, apiRef, scrollToSlide, isTransitioning } = useCarouselDots(slides.length);
@@ -156,13 +156,16 @@ export default function Home() {
         </div>
 
         {/* Top categories (4 visible, swipe for more) */}
-        <section className="space-y-3">
-          <div className="flex items-end justify-between">
-            <h2 className="text-base font-semibold tracking-tight">Top Categories</h2>
-            <p  className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors">
-              Shop Now
-            </p>
-          </div>
+	        <section className="space-y-3">
+	          <div className="flex items-end justify-between">
+	            <h2 className="text-base font-semibold tracking-tight">Top Categories</h2>
+	            <Link
+	              href="/categories"
+	              className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors"
+	            >
+	              See All
+	            </Link>
+	          </div>
 
           <Carousel
             className="w-full"

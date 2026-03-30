@@ -6,11 +6,10 @@ import {
   Heart, 
   ChevronLeft, 
   ChevronRight, 
-  Share2, 
   Plus, 
   Minus,
   Check,
-  Star,
+  Share2,
   ShieldCheck,
   Truck,
   RotateCcw
@@ -22,11 +21,13 @@ import {
   CarouselNext,
   CarouselPrevious,
   type CarouselApi,
-} from "@/components/ui/carousel"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
+	} from "@/components/ui/carousel"
+	import { Button } from "@/components/ui/button"
+	import { Badge } from "@/components/ui/badge"
+	import { Separator } from "@/components/ui/separator"
+  import { ShareDialog } from "@/components/ShareDialog"
+	import { cn } from "@/lib/utils"
+  import { addToCart, getFavourites, toggleFavourite } from "@/lib/store"
 
 // Simple Accordion Component since it's not in UI directory
 function Accordion({ title, children, defaultOpen = false }: { title: string, children: React.ReactNode, defaultOpen?: boolean }) {
@@ -80,11 +81,19 @@ const similarProducts = [
   },
 ]
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+ export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [selectedColor, setSelectedColor] = useState("White")
   const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [isFav, setIsFav] = useState(false)
+
+  useEffect(() => {
+    const favs = getFavourites()
+    setIsFav(favs.some((f) => f.id === id))
+  }, [id])
   
   const product = {
     name: "Classic Halter Twist Top",
@@ -178,20 +187,14 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           {/* Right: Product Details */}
           <div className="flex flex-col space-y-8">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Share2 className="h-5 w-5" />
-                </Button>
-              </div>
-              
-              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-4xl">
+              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-3xl">
                 {product.name}
               </h1>
               
-              <div className="flex items-baseline space-x-4">
-                <span className="text-3xl font-bold text-primary">${product.price}</span>
+              <div className="flex items-baseline items-center space-x-4">
+                <span className="text-2xl font-bold text-primary">${product.price}</span>
                 <span className="text-lg text-muted-foreground line-through">$12.50</span>
-                <Badge variant="destructive" className="rounded-sm">SAVE 30%</Badge>
+                <Badge variant="destructive" className="rounded-sm text-white">SAVE 30%</Badge>
               </div>
             </div>
 
@@ -241,7 +244,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                       key={size}
                       onClick={() => setSelectedSize(size)}
                       className={cn(
-                        "flex h-12 w-full max-w-[80px] items-center justify-center rounded-md border text-sm font-medium transition-all hover:border-primary",
+                        "flex h-10 w-10 max-w-[80px] items-center justify-center rounded-md border text-sm font-medium transition-all hover:border-primary",
                         selectedSize === size 
                           ? "border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary"
                           : "bg-card text-muted-foreground"
@@ -255,14 +258,56 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
 
             {/* Actions */}
-            <div className="flex gap-4">
-              <Button size="lg" className="flex-1 bg-black hover:bg-black h-12 text-lg">
-                ADD TO CART
-              </Button>
-              <Button variant="outline" size="icon" className="h-12 w-12 rounded-md border-2">
-                <Heart className="h-6 w-6" />
+	            <div className="flex gap-4">
+	              <Button
+                  size="lg"
+                  className="flex-1 bg-black hover:bg-black h-10 text-lg"
+                  onClick={() => {
+                    addToCart(
+                      {
+                        id,
+                        name: product.name,
+                        href: `/products/${id}`,
+                        image: product.images[0] ?? "",
+                        price: product.price,
+                      },
+                      1
+                    )
+                  }}
+                >
+	                ADD TO CART
+	              </Button>
+	              <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-md border"
+                  aria-label="Add to favourites"
+                  onClick={() => {
+                    toggleFavourite({
+                      id,
+                      name: product.name,
+                      href: `/products/${id}`,
+                      image: product.images[0] ?? "",
+                      price: product.price,
+                    })
+                    setIsFav((v) => !v)
+                  }}
+                >
+	                <Heart className={isFav ? "h-6 w-6 fill-primary text-primary" : "h-6 w-6"} />
+	              </Button>
+	              <Button
+	                type="button"
+	                variant="outline"
+                size="icon"
+                className="h-10 w-10 rounded-md border"
+                onClick={() => setShareOpen(true)}
+                aria-label="Share"
+              >
+                <Share2 className="h-5 w-5" />
               </Button>
             </div>
+            <ShareDialog open={shareOpen} onOpenChange={setShareOpen} />
 
             {/* Features */}
             <div className="grid grid-cols-3 gap-4 py-4 sm:divide-x">
