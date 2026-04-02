@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import TopLoader from "@/components/TopLoader"
 import { PromoPopup } from "@/components/PromoPopup";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -54,12 +55,13 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, katumruyPro.variable, "font-sans", inter.variable)}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col pb-[60px] lg:pb-0">
         <TopLoader />
         <PromoPopup />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <MobileBottomNav />
         <ScrollToTop />
       </body>
     </html>

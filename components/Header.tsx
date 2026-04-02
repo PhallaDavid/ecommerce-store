@@ -344,7 +344,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full relative"
+                className="rounded-full relative hidden md:block"
                 aria-label="Favourites"
                 onClick={() => setIsFavouritesOpen(true)}
               >
@@ -359,7 +359,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full relative"
+                className="rounded-full relative hidden md:block"
                 aria-label="Cart"
                 onClick={() => setIsCartOpen(true)}
               >

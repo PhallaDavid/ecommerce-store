@@ -14,10 +14,10 @@ function TopLoaderContent() {
     const style = document.createElement('style')
     style.textContent = `
       #nprogress .bar {
-        background: oklch(0.4 0.84 160.1) !important;
+        background: oklch(52.5% 0.223 3.958) !important;
       }
       #nprogress .peg {
-        box-shadow: 0 0 10px oklch(0.4 0.84 160.1), 0 0 5px oklch(0.4 0.84 160.1) !important;
+        box-shadow: 0 0 10px oklch(52.5% 0.223 3.958), 0 0 5px oklch(52.5% 0.223 3.958) !important;
       }
     `
     document.head.appendChild(style)

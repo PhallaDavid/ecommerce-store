@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export function PromoPopup() {
   const [isOpen, setIsOpen] = useState(false);
+  const [countdown, setCountdown] = useState(10);
 
   useEffect(() => {
     const hasSeen = sessionStorage.getItem("promo-seen");
@@ -14,9 +15,17 @@ export function PromoPopup() {
       if (!hasSeen) {
         setIsOpen(true);
         sessionStorage.setItem("promo-seen", "true");
-        setTimeout(() => {
-          setIsOpen(false);
-        }, 10000);
+        
+        const interval = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              setIsOpen(false);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       }
     }, 1000);
 
@@ -29,12 +38,12 @@ export function PromoPopup() {
     <>
       {/* Backdrop overlay */}
       <div 
-        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-[100] p-4 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={() => setIsOpen(false)}
       />
       
       {/* Popup content */}
-      <div className="fixed left-[50%] top-[50%] p-8 z-[101] grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-2xl duration-200 sm:rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95">
+      <div className="fixed left-[50%] top-[50%] z-[101] grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-2xl duration-200 sm:rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95">
         
         {/* Close Button */}
         <button 
@@ -71,7 +80,7 @@ export function PromoPopup() {
           </Button>
           
           <p className="text-[10px] text-muted-foreground mt-2 opacity-60">
-            Auto-closing in 10s
+            Auto-closing in {countdown}s
           </p>
         </div>
       </div>
