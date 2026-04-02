@@ -38,17 +38,17 @@ export function PromoPopup() {
     <>
       {/* Backdrop overlay */}
       <div 
-        className="fixed inset-0 z-[100] p-4 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-[100]  bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={() => setIsOpen(false)}
       />
       
       {/* Popup content */}
-      <div className="fixed left-[50%] top-[50%] z-[101] grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-2xl duration-200 sm:rounded-2xl overflow-hidden animate-in fade-in-0 zoom-in-95">
+      <div className="fixed left-[50%]  top-[50%] z-[101] grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background duration-200 sm:rounded-md overflow-hidden animate-in fade-in-0 zoom-in-95">
         
         {/* Close Button */}
         <button 
           onClick={() => setIsOpen(false)}
-          className="absolute right-3 top-3 rounded-full bg-black/20 p-2 text-white hover:bg-black/40 transition-colors z-10 focus:outline-none"
+          className="absolute right-3 top-3 rounded-full bg-black/20  text-white hover:bg-black/40 transition-colors z-10 focus:outline-none"
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
@@ -73,7 +73,7 @@ export function PromoPopup() {
           </p>
           
           <Button 
-            className="w-full mt-4 h-12 text-base font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
+            className="w-full mt-4 h-12 text-base font-bold transition-transform"
             onClick={() => setIsOpen(false)}
           >
             Claim Discount Now

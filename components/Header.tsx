@@ -136,7 +136,7 @@ function MobileNavSection({
   return (
     <div>
       <button
-        className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+        className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
         onClick={() => setOpen((v) => !v)}
       >
         <span>{label}</span>
@@ -165,7 +165,7 @@ function MobileNavLink({
   const router = useRouter()
   return (
     <button
-      className="flex items-center w-full text-left px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      className="flex items-center w-full text-left px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-primary hover:bg-primary-50 transition-colors"
       onClick={() => {
         router.push(href)
         onClick()
@@ -490,7 +490,7 @@ export function Header() {
               {/* ── Simple links ── */}
               <div className="">
                 <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
                   onClick={() => { router.push("/"); closeSidebar() }}
                 >
                   Home
@@ -500,7 +500,7 @@ export function Header() {
               {/* ── Categories ── */}
               <MobileNavSection label="Categories">
                 {/* Electronics */}
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
                   Electronics
                 </p>
                 <MobileNavLink href="/categories/electronics/smartphones" onClick={closeSidebar}>Smartphones</MobileNavLink>
@@ -509,7 +509,7 @@ export function Header() {
                 <MobileNavLink href="/categories/electronics/accessories" onClick={closeSidebar}>Accessories</MobileNavLink>
 
                 {/* Clothing */}
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
                   Clothing
                 </p>
                 <MobileNavLink href="/categories/clothing/men" onClick={closeSidebar}>Men's Clothing</MobileNavLink>
@@ -518,7 +518,7 @@ export function Header() {
                 <MobileNavLink href="/categories/clothing/shoes" onClick={closeSidebar}>Shoes & Footwear</MobileNavLink>
 
                 {/* Home & Garden */}
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
                   Home & Garden
                 </p>
                 <MobileNavLink href="/categories/home/furniture" onClick={closeSidebar}>Furniture</MobileNavLink>
@@ -527,7 +527,7 @@ export function Header() {
                 <MobileNavLink href="/categories/home/garden" onClick={closeSidebar}>Garden & Outdoor</MobileNavLink>
 
                 {/* Beauty & Health */}
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
                   Beauty & Health
                 </p>
                 <MobileNavLink href="/categories/beauty/skincare" onClick={closeSidebar}>Skincare</MobileNavLink>
@@ -536,7 +536,7 @@ export function Header() {
                 <MobileNavLink href="/categories/beauty/health" onClick={closeSidebar}>Health & Wellness</MobileNavLink>
 
                 {/* Sports & Outdoors */}
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pt-3 pb-1">
+                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
                   Sports & Outdoors
                 </p>
                 <MobileNavLink href="/categories/sports/fitness" onClick={closeSidebar}>Fitness Equipment</MobileNavLink>
@@ -557,7 +557,7 @@ export function Header() {
               {/* ── Simple links ── */}
               <div>
                 <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
                   onClick={() => { router.push("/deals"); closeSidebar() }}
                 >
                   Deals
@@ -565,7 +565,7 @@ export function Header() {
               </div>
               <div>
                 <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
                   onClick={() => { router.push("/new-arrivals"); closeSidebar() }}
                 >
                   New Arrivals
@@ -573,7 +573,7 @@ export function Header() {
               </div>
               <div>
                 <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
                   onClick={() => { router.push("/about"); closeSidebar() }}
                 >
                   About Us
@@ -581,13 +581,13 @@ export function Header() {
               </div>
               <div>
                 <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
                   onClick={() => { router.push("/contact"); closeSidebar() }}
                 >
                   Contact
                 </button>
                 <button
-                      className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:bg-accent transition-colors"
+                      className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
                       onClick={() => { setIsAuthDialogOpen(true); closeSidebar() }}
                     >
                       Sign In
@@ -598,23 +598,23 @@ export function Header() {
               <div className="px-3 py-3 space-y-1">
                 {authUser ? (
                   <>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 pb-1 pt-2">
+                    <p className="text-xs font-semibold text-muted-foreground  px-3 pb-1 pt-2">
                       Account
                     </p>
                     <button
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:text-primary hover:bg-primary-50 transition-colors"
                       onClick={() => { router.push("/profile"); closeSidebar() }}
                     >
                       Profile
                     </button>
                     <button
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:text-primary hover:bg-primary-50 transition-colors"
                       onClick={() => { router.push("/orders"); closeSidebar() }}
                     >
                       My Orders
                     </button>
                     <button
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors"
+                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:text-primary hover:bg-primary-50 transition-colors"
                       onClick={() => { router.push("/settings"); closeSidebar() }}
                     >
                       Settings
@@ -643,7 +643,7 @@ export function Header() {
       </header>
 
       {/* Navigation Menu — desktop only */}
-      <nav className="bg-white pt-4 hidden md:block">
+      <nav className="bg-background pt-4 hidden md:block">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <NavigationMenu className="w-full">
             <NavigationMenuList className="justify-center space-x-8">
@@ -679,16 +679,16 @@ export function Header() {
                         <h4 className="text-sm font-semibold text-muted-foreground">Electronics</h4>
                         <div className="space-y-1">
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/electronics/smartphones" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Smartphones</Link>
+                            <Link href="/categories/electronics/smartphones" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Smartphones</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/electronics/laptops" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Laptops</Link>
+                            <Link href="/categories/electronics/laptops" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Laptops</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/electronics/tablets" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Tablets</Link>
+                            <Link href="/categories/electronics/tablets" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Tablets</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/electronics/accessories" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Accessories</Link>
+                            <Link href="/categories/electronics/accessories" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Accessories</Link>
                           </NavigationMenuLink>
                         </div>
                       </div>
@@ -696,16 +696,16 @@ export function Header() {
                         <h4 className="text-sm font-semibold text-muted-foreground">Clothing</h4>
                         <div className="space-y-1">
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/clothing/men" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Men's Clothing</Link>
+                            <Link href="/categories/clothing/men" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Men's Clothing</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/clothing/women" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Women's Clothing</Link>
+                            <Link href="/categories/clothing/women" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Women's Clothing</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/clothing/kids" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Kids Clothing</Link>
+                            <Link href="/categories/clothing/kids" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Kids Clothing</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/clothing/shoes" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Shoes & Footwear</Link>
+                            <Link href="/categories/clothing/shoes" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Shoes & Footwear</Link>
                           </NavigationMenuLink>
                         </div>
                       </div>
@@ -713,16 +713,16 @@ export function Header() {
                         <h4 className="text-sm font-semibold text-muted-foreground">Home & Garden</h4>
                         <div className="space-y-1">
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/home/furniture" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Furniture</Link>
+                            <Link href="/categories/home/furniture" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Furniture</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/home/decor" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Home Decor</Link>
+                            <Link href="/categories/home/decor" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Home Decor</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/home/kitchen" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Kitchen & Dining</Link>
+                            <Link href="/categories/home/kitchen" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Kitchen & Dining</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/home/garden" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Garden & Outdoor</Link>
+                            <Link href="/categories/home/garden" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Garden & Outdoor</Link>
                           </NavigationMenuLink>
                         </div>
                       </div>
@@ -730,16 +730,16 @@ export function Header() {
                         <h4 className="text-sm font-semibold text-muted-foreground">Beauty & Health</h4>
                         <div className="space-y-1">
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/beauty/skincare" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Skincare</Link>
+                            <Link href="/categories/beauty/skincare" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Skincare</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/beauty/cosmetics" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Cosmetics</Link>
+                            <Link href="/categories/beauty/cosmetics" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Cosmetics</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/beauty/fragrances" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Fragrances</Link>
+                            <Link href="/categories/beauty/fragrances" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Fragrances</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/beauty/health" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Health & Wellness</Link>
+                            <Link href="/categories/beauty/health" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Health & Wellness</Link>
                           </NavigationMenuLink>
                         </div>
                       </div>
@@ -747,16 +747,16 @@ export function Header() {
                         <h4 className="text-sm font-semibold text-muted-foreground">Sports & Outdoors</h4>
                         <div className="space-y-1">
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/sports/fitness" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Fitness Equipment</Link>
+                            <Link href="/categories/sports/fitness" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Fitness Equipment</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/sports/outdoor" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Outdoor Gear</Link>
+                            <Link href="/categories/sports/outdoor" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Outdoor Gear</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/sports/cycling" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Cycling</Link>
+                            <Link href="/categories/sports/cycling" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Cycling</Link>
                           </NavigationMenuLink>
                           <NavigationMenuLink asChild>
-                            <Link href="/categories/sports/water-sports" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">Water Sports</Link>
+                            <Link href="/categories/sports/water-sports" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Water Sports</Link>
                           </NavigationMenuLink>
                         </div>
                       </div>
@@ -782,25 +782,25 @@ export function Header() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <NavigationMenuLink asChild>
-                        <Link href="/brands/nike" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                        <Link href="/brands/nike" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">
                           <div className="text-sm font-medium leading-none">Nike</div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Athletic footwear and apparel</p>
                         </Link>
                       </NavigationMenuLink>
                       <NavigationMenuLink asChild>
-                        <Link href="/brands/samsung" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                        <Link href="/brands/samsung" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">
                           <div className="text-sm font-medium leading-none">Samsung</div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Electronics and smart devices</p>
                         </Link>
                       </NavigationMenuLink>
                       <NavigationMenuLink asChild>
-                        <Link href="/brands/adidas" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                        <Link href="/brands/adidas" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">
                           <div className="text-sm font-medium leading-none">Adidas</div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Sportswear and lifestyle products</p>
                         </Link>
                       </NavigationMenuLink>
                       <NavigationMenuLink asChild>
-                        <Link href="/brands/sony" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                        <Link href="/brands/sony" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">
                           <div className="text-sm font-medium leading-none">Sony</div>
                           <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Audio, gaming, and entertainment</p>
                         </Link>

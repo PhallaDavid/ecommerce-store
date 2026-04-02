@@ -120,7 +120,7 @@ export default function Home() {
                           {slide.text}
                         </span>
                         <Button
-                          className="mt-3 bg-primary text-white hover:bg-primary/90 transition-transform hover:scale-105 duration-300 animate-in slide-in-from-bottom-4 duration-700 delay-200"
+                          className="mt-3 bg-primary text-white hover:bg-primary-50/90 transition-transform hover:scale-105 duration-300 animate-in slide-in-from-bottom-4 duration-700 delay-200"
                           size="lg"
                         >
                           Shop Now
@@ -129,19 +129,24 @@ export default function Home() {
                     </div>
 
                     {/* DOTS inside banner */}
-                    <div className="absolute z-10 bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 animate-in fade-in duration-500">
-                      {slides.map((_, dotIndex) => (
-                        <button
-                          key={dotIndex}
-                          onClick={() => scrollToSlide(dotIndex)}
-                          className={`w-2 h-2 rounded-full transition-all duration-300 border ${
-                            activeIndex === dotIndex
-                              ? "bg-white border-white scale-110"
-                              : "bg-transparent border-white/50 hover:bg-white/20"
-                          }`}
-                        />
-                      ))}
-                    </div>
+                   <div className="absolute z-10 bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2  animate-in fade-in duration-500">
+  {slides.map((_, dotIndex) => (
+    <button
+      key={dotIndex}
+      onClick={() => scrollToSlide(dotIndex)}
+      className={`relative h-2 rounded-full transition-all duration-300 ${
+        activeIndex === dotIndex
+          ? "w-6 bg-white"
+          : "w-2 bg-white/40 hover:bg-white/70"
+      }`}
+    >
+      {/* Active glow */}
+      {activeIndex === dotIndex && (
+        <span className="absolute inset-0 rounded-full bg-white/40 blur-sm" />
+      )}
+    </button>
+  ))}
+</div>
                   </div>
                 </CarouselItem>
               ))}

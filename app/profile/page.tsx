@@ -73,7 +73,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 lg:px-8 max-w-5xl">
+      <div className="container mx-auto px-4 py-8 lg:px-8 max-w-7xl">
 
         {/* Breadcrumb */}
         <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-muted-foreground">
@@ -87,7 +87,7 @@ export default function ProfilePage() {
           {/* ── Sidebar ── */}
           <aside className="space-y-4">
             {/* Avatar card */}
-            <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card p-6 text-center">
+            <div className="flex flex-col items-center gap-3 rounded-md border bg-card p-6 text-center">
               <div className="relative">
                 <Avatar className="h-20 w-20 ring-4 ring-primary/20">
                   <AvatarImage src={avatarSrc} />
@@ -96,7 +96,7 @@ export default function ProfilePage() {
                   </AvatarFallback>
                 </Avatar>
                 <button type="button" onClick={() => fileRef.current?.click()}
-                  className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow hover:bg-primary/90 transition-colors">
+                  className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow hover:bg-primary-50/90 transition-colors">
                   <Camera className="h-3.5 w-3.5" />
                 </button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
@@ -111,7 +111,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Quick links */}
-            <div className="rounded-2xl border bg-card overflow-hidden">
+            <div className="rounded-md border bg-card overflow-hidden">
               {TABS.map(({ id, label, icon: Icon }) => (
                 <button key={id} type="button" onClick={() => setTab(id)}
                   className={cn("flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted border-b last:border-b-0",
@@ -141,7 +141,7 @@ export default function ProfilePage() {
 
             {/* Personal Info */}
             {tab === "info" && (
-              <div className="rounded-2xl border bg-card p-6 space-y-5">
+              <div className="rounded-md border bg-card p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold flex items-center gap-2"><User className="h-4 w-4 text-primary" /> Personal Information</h2>
                 </div>
@@ -161,7 +161,7 @@ export default function ProfilePage() {
 
             {/* Security */}
             {tab === "security" && (
-              <div className="rounded-2xl border bg-card p-6 space-y-5">
+              <div className="rounded-md border bg-card p-6 space-y-5">
                 <h2 className="text-base font-bold flex items-center gap-2"><Lock className="h-4 w-4 text-primary" /> Change Password</h2>
                 <Separator />
                 <Field label="Current Password" id="cp" type="password" value={passwords.current} onChange={v => setPasswords(p => ({...p, current: v}))} placeholder="••••••••" />
@@ -187,7 +187,7 @@ export default function ProfilePage() {
 
             {/* Addresses */}
             {tab === "address" && (
-              <div className="rounded-2xl border bg-card p-6 space-y-4">
+              <div className="rounded-md border bg-card p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-base font-bold flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Saved Addresses</h2>
                   <Button size="sm" variant="outline" className="gap-1 text-xs">
@@ -231,7 +231,7 @@ export default function ProfilePage() {
 
             {/* Notifications */}
             {tab === "notif" && (
-              <div className="rounded-2xl border bg-card p-6 space-y-4">
+              <div className="rounded-md border bg-card p-6 space-y-4">
                 <h2 className="text-base font-bold flex items-center gap-2"><Bell className="h-4 w-4 text-primary" /> Notification Preferences</h2>
                 <Separator />
                 {([

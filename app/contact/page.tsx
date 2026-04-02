@@ -148,7 +148,7 @@ function ContactForm() {
           </div>
           <Button 
             type="submit" 
-            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+            className="w-full bg-primary hover:bg-primary-50/90 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -265,7 +265,7 @@ function StoreInfo() {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 bg-gradient-to-r from-primary to-primary/90 text-white">
         <div className="absolute inset-0 bg-black/20"></div>

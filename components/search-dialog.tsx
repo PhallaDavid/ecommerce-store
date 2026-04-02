@@ -106,7 +106,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
               <svg className="h-12 w-12 mx-auto text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <h2 className="text-2xl font-bold mb-2">Search for products</h2>
+              <h2 className="text-xl font-bold mb-2">Search for products</h2>
               <p className="text-muted-foreground">Enter a search term or upload an image to find products</p>
             </div>
           )}

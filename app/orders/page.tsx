@@ -106,7 +106,7 @@ function OrderCard({ order }: { order: typeof ORDERS[0] }) {
   }
 
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden">
+    <div className="rounded-md border bg-card overflow-hidden">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b">
         <div className="space-y-0.5">
@@ -219,7 +219,7 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 lg:px-8 max-w-3xl">
+      <div className="container mx-auto px-4 py-8 lg:px-8 max-w-7xl">
 
         {/* Breadcrumb */}
         <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-muted-foreground">

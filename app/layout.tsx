@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Kantumruy_Pro } from "next/font/google";
+import "leaflet/dist/leaflet.css";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Header } from "@/components/Header";
