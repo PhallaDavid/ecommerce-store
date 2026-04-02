@@ -1,35 +1,36 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { 
   Heart, 
   ChevronLeft, 
   ChevronRight, 
   Plus, 
-  Minus,
   Check,
   Share2,
   ShieldCheck,
   Truck,
   RotateCcw
 } from "lucide-react"
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-  type CarouselApi,
-	} from "@/components/ui/carousel"
-	import { Button } from "@/components/ui/button"
-	import { Badge } from "@/components/ui/badge"
-	import { Separator } from "@/components/ui/separator"
-  import { ShareDialog } from "@/components/ShareDialog"
-	import { cn } from "@/lib/utils"
-  import { addToCart, getFavourites, toggleFavourite } from "@/lib/store"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { ShareDialog } from "@/components/ShareDialog"
+import { cn } from "@/lib/utils"
+import { addToCart, getFavourites, toggleFavourite } from "@/lib/store"
 
-// Simple Accordion Component since it's not in UI directory
+// Swiper
+import { Swiper, SwiperSlide } from "swiper/react"
+import { Navigation, Pagination, Thumbs, FreeMode } from "swiper/modules"
+import type { Swiper as SwiperType } from "swiper"
+import "swiper/css"
+import "swiper/css/navigation"
+import "swiper/css/pagination"
+import "swiper/css/thumbs"
+import "swiper/css/free-mode"
+
+// Simple Accordion Component
 function Accordion({ title, children, defaultOpen = false }: { title: string, children: React.ReactNode, defaultOpen?: boolean }) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   return (
@@ -81,14 +82,21 @@ const similarProducts = [
   },
 ]
 
- export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params)
   const [selectedSize, setSelectedSize] = useState<string | null>(null)
   const [selectedColor, setSelectedColor] = useState("White")
-  const [api, setApi] = useState<CarouselApi>()
-  const [current, setCurrent] = useState(0)
+  const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [isFav, setIsFav] = useState(false)
+
+  // Custom nav refs — product gallery
+  const galleryPrevRef = useRef<HTMLButtonElement>(null)
+  const galleryNextRef = useRef<HTMLButtonElement>(null)
+
+  // Custom nav refs — similar products
+  const similarPrevRef = useRef<HTMLButtonElement>(null)
+  const similarNextRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const favs = getFavourites()
@@ -111,155 +119,173 @@ const similarProducts = [
     ]
   }
 
-  useEffect(() => {
-    if (!api) return
-    setCurrent(api.selectedScrollSnap())
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap())
-    })
-  }, [api])
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 lg:px-8">
-        {/* Breadcrumb */}
-        <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-muted-foreground">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-          <ChevronRight className="h-4 w-4" />
-          <Link href="/products" className="hover:text-primary transition-colors">Products</Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground truncate max-w-[200px]">{product.name}</span>
-        </nav>
+    <>
+      <style>{`
+        /* ── Thumb swiper ── */
+        .thumb-swiper .swiper-slide { opacity: .55; cursor: pointer; border-radius: 8px; overflow: hidden; border: 2px solid transparent; transition: opacity .2s, border-color .2s; }
+        .thumb-swiper .swiper-slide-thumb-active { opacity: 1; border-color: hsl(var(--primary)); }
+        /* hide Swiper's own nav everywhere since we use custom buttons */
+        .swiper-button-prev, .swiper-button-next { display: none !important; }
+      `}</style>
 
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-          
-          {/* Left: Product Images */}
-          <div className="space-y-4">
-            <Carousel setApi={setApi} className="w-full">
-              <CarouselContent>
-                {product.images.map((image, index) => (
-                  <CarouselItem key={index}>
-                    <div className="group relative aspect-3/4 overflow-hidden rounded-md border bg-muted">
-                      <img
-                        src={image}
-                        alt={`${product.name} ${index + 1}`}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className=" md:flex hidden left-4" />
-              <CarouselNext className=" md:flex hidden right-4" />
-              
-              {/* Image Indicators */}
-              <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 space-x-2">
-                {product.images.map((_, i) => (
-                  <button 
-                    key={i} 
-                    onClick={() => api?.scrollTo(i)}
-                    className={cn(
-                      "h-1.5 rounded-full transition-all",
-                      current === i ? "w-6 bg-white" : "w-1.5 bg-white/50"
-                    )}
-                  />
-                ))}
-              </div>
-            </Carousel>
-            
-            {/* Thumbnails */}
-            <div className="flex gap-4 overflow-x-auto pb-2">
-              {product.images.map((img, i) => (
-                <button
-                  key={i}
-                  onClick={() => api?.scrollTo(i)}
-                  className={cn(
-                    "relative aspect-3/4 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all",
-                    current === i ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
-                  )}
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 lg:px-8">
+          {/* Breadcrumb */}
+          <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-muted-foreground">
+            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+            <ChevronRight className="h-4 w-4" />
+            <Link href="/products" className="hover:text-primary transition-colors">Products</Link>
+            <ChevronRight className="h-4 w-4" />
+            <span className="text-foreground truncate max-w-[200px]">{product.name}</span>
+          </nav>
+
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+
+            {/* ── Left: Product Images ── */}
+            <div className="space-y-3">
+              {/* Main gallery */}
+              <div className="relative">
+                <Swiper
+                  className="w-full rounded-md overflow-hidden"
+                  modules={[Navigation, Pagination, Thumbs]}
+                  navigation={{ prevEl: galleryPrevRef.current, nextEl: galleryNextRef.current }}
+                  onBeforeInit={(swiper) => {
+                    if (typeof swiper.params.navigation === 'object' && swiper.params.navigation) {
+                      swiper.params.navigation.prevEl = galleryPrevRef.current
+                      swiper.params.navigation.nextEl = galleryNextRef.current
+                    }
+                  }}
+                  pagination={{ clickable: true, dynamicBullets: true }}
+                  thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
+                  loop={product.images.length > 1}
                 >
-                  <img src={img} className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Right: Product Details */}
-          <div className="flex flex-col space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-3xl">
-                {product.name}
-              </h1>
-              
-              <div className="flex items-baseline items-center space-x-4">
-                <span className="text-2xl font-bold text-primary">${product.price}</span>
-                <span className="text-lg text-muted-foreground line-through">$12.50</span>
-                <Badge variant="destructive" className="rounded-sm text-white">SAVE 30%</Badge>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Selection Options */}
-            <div className="space-y-6">
-              {/* Color Selection */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide">Color</h3>
-                  <span className="text-sm text-muted-foreground">{selectedColor}</span>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  {product.colors.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => setSelectedColor(color.name)}
-                      className={cn(
-                        "group relative aspect-square w-20 overflow-hidden rounded-md border-2 transition-all",
-                        selectedColor === color.name ? "border-primary scale-105" : "border-transparent opacity-80 hover:opacity-100"
-                      )}
-                    >
-                      <img src={color.image} className="h-full w-full object-cover" />
-                      <div className="absolute inset-x-0 bottom-0 bg-black/40 py-1 text-center">
-                        <span className="text-[10px] text-white font-medium">{color.name}</span>
+                  {product.images.map((image, index) => (
+                    <SwiperSlide key={index}>
+                      <div className="group relative aspect-3/4 overflow-hidden bg-muted">
+                        <img
+                          src={image}
+                          alt={`${product.name} ${index + 1}`}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
                       </div>
-                      {selectedColor === color.name && (
-                        <div className="absolute top-1 right-1 bg-primary rounded-full p-0.5">
-                          <Check className="h-2 w-2 text-white" />
-                        </div>
-                      )}
-                    </button>
+                    </SwiperSlide>
                   ))}
-                </div>
+                </Swiper>
+
+                {/* Custom prev/next — lucide icons */}
+                <button
+                  ref={galleryPrevRef}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90  hover:bg-white transition-colors"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5 text-gray-800" />
+                </button>
+                <button
+                  ref={galleryNextRef}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90  hover:bg-white transition-colors"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5 text-gray-800" />
+                </button>
               </div>
 
-              {/* Size Selection */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide">Select Size</h3>
-                  <button className="text-xs font-medium text-primary hover:underline">Size Guide</button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {product.sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={cn(
-                        "flex h-10 w-10 max-w-[80px] items-center justify-center rounded-md border text-sm font-medium transition-all hover:border-primary",
-                        selectedSize === size 
-                          ? "border-primary bg-primary/5 text-primary shadow-sm ring-1 ring-primary"
-                          : "bg-card text-muted-foreground"
-                      )}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* Thumbnails */}
+              <Swiper
+                className="thumb-swiper w-full"
+                modules={[Thumbs, FreeMode]}
+                onSwiper={setThumbsSwiper}
+                slidesPerView={4}
+                spaceBetween={10}
+                freeMode
+                watchSlidesProgress
+              >
+                {product.images.map((img, i) => (
+                  <SwiperSlide key={i}>
+                    <div className="aspect-3/4 overflow-hidden">
+                      <img src={img} alt={`thumb ${i + 1}`} className="h-full w-full object-cover" />
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
             </div>
 
-            {/* Actions */}
-	            <div className="flex gap-4">
-	              <Button
+            {/* ── Right: Product Details ── */}
+            <div className="flex flex-col space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-3xl">
+                  {product.name}
+                </h1>
+                
+                <div className="flex items-baseline items-center space-x-4">
+                  <span className="text-2xl font-bold text-primary">${product.price}</span>
+                  <span className="text-lg text-muted-foreground line-through">$12.50</span>
+                  <Badge variant="destructive" className="rounded-sm text-white">SAVE 30%</Badge>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Selection Options */}
+              <div className="space-y-6">
+                {/* Color Selection */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide">Color</h3>
+                    <span className="text-sm text-muted-foreground">{selectedColor}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {product.colors.map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => setSelectedColor(color.name)}
+                        className={cn(
+                          "group relative aspect-square w-20 overflow-hidden rounded-md border-2 transition-all",
+                          selectedColor === color.name ? "border-primary scale-105" : "border-transparent opacity-80 hover:opacity-100"
+                        )}
+                      >
+                        <img src={color.image} className="h-full w-full object-cover" />
+                        <div className="absolute inset-x-0 bottom-0 bg-black/40 py-1 text-center">
+                          <span className="text-[10px] text-white font-medium">{color.name}</span>
+                        </div>
+                        {selectedColor === color.name && (
+                          <div className="absolute top-1 right-1 bg-primary rounded-full p-0.5">
+                            <Check className="h-2 w-2 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Size Selection */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide">Select Size</h3>
+                    <button className="text-xs font-medium text-primary hover:underline">Size Guide</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={cn(
+                          "flex h-10 w-10 max-w-[80px] items-center justify-center rounded-md border text-sm font-medium transition-all hover:border-primary",
+                          selectedSize === size 
+                            ? "border-primary bg-primary/5 text-primary  ring-1 ring-primary"
+                            : "bg-card text-muted-foreground"
+                        )}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-4">
+                <Button
                   size="lg"
                   className="flex-1 bg-black hover:bg-black h-10 text-lg"
                   onClick={() => {
@@ -275,9 +301,9 @@ const similarProducts = [
                     )
                   }}
                 >
-	                ADD TO CART
-	              </Button>
-	              <Button
+                  ADD TO CART
+                </Button>
+                <Button
                   type="button"
                   variant="outline"
                   size="icon"
@@ -294,84 +320,114 @@ const similarProducts = [
                     setIsFav((v) => !v)
                   }}
                 >
-	                <Heart className={isFav ? "h-6 w-6 fill-primary text-primary" : "h-6 w-6"} />
-	              </Button>
-	              <Button
-	                type="button"
-	                variant="outline"
-                size="icon"
-                className="h-10 w-10 rounded-md border"
-                onClick={() => setShareOpen(true)}
-                aria-label="Share"
+                  <Heart className={isFav ? "h-6 w-6 fill-primary text-primary" : "h-6 w-6"} />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 rounded-md border"
+                  onClick={() => setShareOpen(true)}
+                  aria-label="Share"
+                >
+                  <Share2 className="h-5 w-5" />
+                </Button>
+              </div>
+              <ShareDialog open={shareOpen} onOpenChange={setShareOpen} />
+
+              {/* Features */}
+              <div className="grid grid-cols-3 gap-4 py-4 sm:divide-x">
+                <div className="flex flex-col items-center text-center space-y-1">
+                  <Truck className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-[10px] font-medium uppercase text-muted-foreground">Fast Shipping</span>
+                </div>
+                <div className="flex flex-col items-center text-center space-y-1">
+                  <ShieldCheck className="h-5 w-5 text-muted-foreground" /> 
+                  <span className="text-[10px] font-medium uppercase text-muted-foreground">Secure Pay</span>
+                </div>
+                <div className="flex flex-col items-center text-center space-y-1">
+                  <RotateCcw className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-[10px] font-medium uppercase text-muted-foreground">Easy Returns</span>
+                </div>
+              </div>
+
+              {/* Accordions */}
+              <div className="space-y-1 pt-4">
+                <Accordion title="About the Product" defaultOpen>
+                  This classic halter twist top is designed for both comfort and style. Made from a lightweight, breathable blend of cotton and spandex, it offers a soft feel with just the right amount of stretch. The twisted front detail adds a sophisticated touch, while the halter neckline creates a flattering silhouette.
+                </Accordion>
+                <Accordion title="Shipping & Returns">
+                  We offer free standard shipping on all orders over $50. Standard delivery typically takes 3-5 business days. If you're not completely satisfied with your purchase, it can be returned within 30 days of receipt, provided the items remain in their original condition.
+                </Accordion>
+                <Accordion title="Care Instructions">
+                  Machine wash cold with like colors. Do not bleach. Tumble dry low. Iron on low heat if necessary. Do not dry clean.
+                </Accordion>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Similar Products ── */}
+          <section className="mt-20 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold tracking-tight">Similar Products</h2>
+              <Link href="/products" className="text-sm font-medium text-primary hover:underline">View All</Link>
+            </div>
+
+            <div className="relative">
+              <Swiper
+                modules={[Navigation]}
+                navigation={{ prevEl: similarPrevRef.current, nextEl: similarNextRef.current }}
+                onBeforeInit={(swiper) => {
+                  if (typeof swiper.params.navigation === 'object' && swiper.params.navigation) {
+                    swiper.params.navigation.prevEl = similarPrevRef.current
+                    swiper.params.navigation.nextEl = similarNextRef.current
+                  }
+                }}
+                spaceBetween={16}
+                breakpoints={{
+                  0:   { slidesPerView: 2 },
+                  768: { slidesPerView: 3 },
+                  1024:{ slidesPerView: 4 },
+                }}
               >
-                <Share2 className="h-5 w-5" />
-              </Button>
-            </div>
-            <ShareDialog open={shareOpen} onOpenChange={setShareOpen} />
-
-            {/* Features */}
-            <div className="grid grid-cols-3 gap-4 py-4 sm:divide-x">
-              <div className="flex flex-col items-center text-center space-y-1">
-                <Truck className="h-5 w-5 text-muted-foreground" />
-                <span className="text-[10px] font-medium uppercase text-muted-foreground">Fast Shipping</span>
-              </div>
-              <div className="flex flex-col items-center text-center space-y-1">
-                <ShieldCheck className="h-5 w-5 text-muted-foreground" />
-                <span className="text-[10px] font-medium uppercase text-muted-foreground">Secure Pay</span>
-              </div>
-              <div className="flex flex-col items-center text-center space-y-1">
-                <RotateCcw className="h-5 w-5 text-muted-foreground" />
-                <span className="text-[10px] font-medium uppercase text-muted-foreground">Easy Returns</span>
-              </div>
-            </div>
-
-            {/* Additional Info */}
-            <div className="space-y-1 pt-4">
-              <Accordion title="About the Product" defaultOpen>
-                This classic halter twist top is designed for both comfort and style. Made from a lightweight, breathable blend of cotton and spandex, it offers a soft feel with just the right amount of stretch. The twisted front detail adds a sophisticated touch, while the halter neckline creates a flattering silhouette.
-              </Accordion>
-              <Accordion title="Shipping & Returns">
-                We offer free standard shipping on all orders over $50. Standard delivery typically takes 3-5 business days. If you're not completely satisfied with your purchase, it can be returned within 30 days of receipt, provided the items remain in their original condition.
-              </Accordion>
-              <Accordion title="Care Instructions">
-                Machine wash cold with like colors. Do not bleach. Tumble dry low. Iron on low heat if necessary. Do not dry clean.
-              </Accordion>
-            </div>
-          </div>
-        </div>
-
-        {/* Similar Products Section */}
-        <section className="mt-20 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight">Similar Products</h2>
-            <Link href="/products" className="text-sm font-medium text-primary hover:underline">View All</Link>
-          </div>
-          
-          <Carousel className="w-full">
-            <CarouselContent className="-ml-4">
-              {similarProducts.map((p) => (
-                <CarouselItem key={p.id} className="pl-4 basis-1/2 md:basis-1/3 lg:basis-1/4">
-                  <Link href={p.href} className="group block">
-                    <div className="relative aspect-3/4 overflow-hidden rounded-md border bg-muted">
+                {similarProducts.map((p) => (
+                  <SwiperSlide key={p.id}>
+                    <Link href={p.href} className="group block">
+                      <div className="relative aspect-3/4 overflow-hidden rounded-md border bg-muted">
                         <img 
-                        src={p.image} 
-                        alt={p.name}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                    <div className="mt-3 space-y-1">
-                      <h3 className="text-sm font-medium group-hover:text-primary transition-colors">{p.name}</h3>
-                      <p className="text-sm font-bold">${p.price}</p>
-                    </div>
-                  </Link>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="-left-4" />
-            <CarouselNext className="-right-4" />
-          </Carousel>
-        </section>
+                          src={p.image} 
+                          alt={p.name}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="mt-3 space-y-1">
+                        <h3 className="text-sm font-medium group-hover:text-primary transition-colors">{p.name}</h3>
+                        <p className="text-sm font-bold">${p.price}</p>
+                      </div>
+                    </Link>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+
+              {/* Custom prev/next — lucide icons */}
+              <button
+                ref={similarPrevRef}
+                className="absolute -left-5 top-[35%] -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white  hover:bg-gray-50 transition-colors border"
+                aria-label="Previous"
+              >
+                <ChevronLeft className="h-5 w-5 text-gray-800" />
+              </button>
+              <button
+                ref={similarNextRef}
+                className="absolute -right-5 top-[35%] -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white  hover:bg-gray-50 transition-colors border"
+                aria-label="Next"
+              >
+                <ChevronRight className="h-5 w-5 text-gray-800" />
+              </button>
+            </div>
+          </section>
+        </div>
       </div>
-    </div>
+    </>
   )
 }

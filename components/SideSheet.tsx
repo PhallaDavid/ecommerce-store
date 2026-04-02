@@ -50,7 +50,7 @@ export function SideSheet({ open, onOpenChange, title, children }: SideSheetProp
         aria-label={title}
         className={cn(
           "absolute right-0 top-0 h-full w-full sm:w-[420px]",
-          "border-l bg-background shadow-xl",
+          "border-l bg-background ",
           "transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "translate-x-full"
         )}

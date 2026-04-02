@@ -78,7 +78,7 @@ export function ShareDialog({ open, onOpenChange, url, title = "Share" }: ShareD
         aria-label={title}
         className={cn(
           "absolute left-1/2 top-1/2 w-[min(92vw,420px)] -translate-x-1/2 -translate-y-1/2",
-          "rounded-2xl border bg-background shadow-xl"
+          "rounded-2xl border bg-background "
         )}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b">

@@ -445,7 +445,7 @@ export function Header() {
           )}
 
           <div
-            className={`md:hidden fixed top-0 right-0 z-50 h-screen w-full bg-background shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
+            className={`md:hidden fixed top-0 right-0 z-50 h-screen w-full bg-background  flex flex-col transition-transform duration-300 ease-in-out ${
               mounted && mobileMenuOpen ? "translate-x-0" : "translate-x-full"
             }`}
           >
@@ -662,7 +662,7 @@ export function Header() {
                         <NavigationMenuLink asChild>
                           <Link
                             href="/categories/electronics"
-                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:"
                           >
                             <div className="mb-2 mt-4 text-lg font-medium">
                               Electronics
@@ -773,7 +773,7 @@ export function Header() {
                       <NavigationMenuLink asChild>
                         <Link
                           href="/brands/apple"
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:"
                         >
                           <div className="mb-2 mt-4 text-lg font-medium">Apple</div>
                           <p className="text-sm leading-tight text-muted-foreground">Premium electronics and devices</p>

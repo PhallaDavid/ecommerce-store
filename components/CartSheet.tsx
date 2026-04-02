@@ -129,7 +129,9 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
               <span className="text-muted-foreground">Total</span>
               <span className="font-semibold">${total.toFixed(2)}</span>
             </div>
-            <Button className="w-full mt-3">Checkout</Button>
+            <Button className="w-full mt-3" asChild>
+              <Link href="/checkout" onClick={() => onOpenChange(false)}>Checkout</Link>
+            </Button>
           </div>
         </div>
       )}

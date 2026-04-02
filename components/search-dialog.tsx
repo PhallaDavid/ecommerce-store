@@ -93,7 +93,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {['Product 1', 'Product 2', 'Product 3', 'Product 4', 'Product 5', 'Product 6'].map((product, index) => (
-                  <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={index} className="border rounded-lg p-4 hover: transition-shadow">
                     <div className="aspect-square bg-gray-200 rounded mb-2"></div>
                     <h3 className="font-medium">{product}</h3>
                     <p className="text-sm text-muted-foreground mt-1">Product description</p>

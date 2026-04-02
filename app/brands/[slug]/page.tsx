@@ -182,7 +182,7 @@ export default function BrandPage({ params }: PageProps) {
                       type="button"
                       variant="secondary"
                       size="icon-sm"
-                      className="absolute right-3 top-3 rounded-full bg-background/85 backdrop-blur border shadow-sm hover:bg-background"
+                      className="absolute right-3 top-3 rounded-full bg-background/85 backdrop-blur border  hover:bg-background"
                       aria-label="Add to wishlist"
                       onClick={(e) => {
                         e.preventDefault()
@@ -210,7 +210,7 @@ export default function BrandPage({ params }: PageProps) {
                       type="button"
                       variant="secondary"
                       size="icon-sm"
-                      className="absolute right-3 top-14 rounded-full bg-background/85 backdrop-blur border shadow-sm hover:bg-background"
+                      className="absolute right-3 top-14 rounded-full bg-background/85 backdrop-blur border  hover:bg-background"
                       aria-label="Add to cart"
                       onClick={(e) => {
                         e.preventDefault()
