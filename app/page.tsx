@@ -12,16 +12,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
-import {
-  Gamepad2,
-  Headphones,
-  Laptop,
-  Shirt,
-  ShoppingBag,
-  Smartphone,
-  Sparkles,
-  Watch,
-} from "lucide-react";
+import api from "@/utils/axios";
 import { useState, useEffect, useRef } from "react";
 
 function useCarouselDots(slidesLength: number) {
@@ -47,39 +38,93 @@ function useCarouselDots(slidesLength: number) {
   };
 }
 
+type Category = {
+  id: number;
+  name: string;
+  description: string | null;
+  avatar: string | null;
+  created_at: string;
+};
+
+type Banner = {
+  id: number;
+  title: string;
+  description: string | null;
+  image: string;
+  status: string;
+  created_at: string;
+};
+
 export default function Home() {
-  const slides = [
-    { text: "Discover the latest trends in fashion", img: "/images/ten11 summer_cate_banner_Ten11.jpg",},
-    { text: "Discover the latest trends in fashion", img: "/images/ten11 summer_cate_banner_Ten11.jpg",},
-    { text: "Discover the latest trends in fashion", img: "/images/ten11 summer_cate_banner_Ten11.jpg",},
-    { text: "Discover the latest trends in fashion", img: "/images/ten11 summer_cate_banner_Ten11.jpg",},
-  ];
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [bannersLoading, setBannersLoading] = useState(true);
+  const [bannersError, setBannersError] = useState<string | null>(null);
 
-  const categories = [
-    { label: "Fashion", icon: Shirt, href: "/categories/fashion" },
-    { label: "Electronics", icon: Smartphone, href: "/categories/electronics" },
-    { label: "Accessories", icon: Watch, href: "/categories/accessories" },
-    { label: "Audio", icon: Headphones, href: "/categories/audio" },
-    { label: "Computers", icon: Laptop, href: "/categories/computers" },
-    { label: "Gaming", icon: Gamepad2, href: "/categories/gaming" },
-    { label: "New Arrivals", icon: Sparkles, href: "/categories/new" },
-    { label: "Essentials", icon: ShoppingBag, href: "/categories/essentials" },
-  ] as const;
+  const [topCategories, setTopCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
-  const { activeIndex, setActiveIndex, apiRef, scrollToSlide, isTransitioning } = useCarouselDots(slides.length);
+  const slidesLength = bannersLoading ? 4 : Math.max(1, banners.length);
+  const { activeIndex, setActiveIndex, apiRef, scrollToSlide, isTransitioning } = useCarouselDots(slidesLength);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setBannersLoading(true);
+      setBannersError(null);
+      try {
+        const res = await api.get<Banner[]>("/banners");
+        if (cancelled) return;
+        const list = Array.isArray(res.data) ? res.data : [];
+        setBanners(list.filter((b) => b.status === "active"));
+      } catch (e: unknown) {
+        if (cancelled) return;
+        setBanners([]);
+        setBannersError(e instanceof Error ? e.message : "Failed to load banners");
+      } finally {
+        if (!cancelled) setBannersLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setCategoriesLoading(true);
+      setCategoriesError(null);
+      try {
+        const res = await api.get<Category[]>("/categories");
+        if (cancelled) return;
+        const data = Array.isArray(res.data) ? res.data : [];
+        setTopCategories(data.slice(0, 12));
+      } catch (e: unknown) {
+        if (cancelled) return;
+        setTopCategories([]);
+        setCategoriesError(e instanceof Error ? e.message : "Failed to load categories");
+      } finally {
+        if (!cancelled) setCategoriesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Auto-slide functionality
   useEffect(() => {
     if (isHovered) return;
     const interval = setInterval(() => {
       if (apiRef.current && !isTransitioning) {
-        const nextIndex = (activeIndex + 1) % slides.length;
+        const nextIndex = (activeIndex + 1) % slidesLength;
         scrollToSlide(nextIndex);
       }
     }, 4000); // Change slide every 4 seconds
 
     return () => clearInterval(interval);
-  }, [activeIndex, slides.length, isTransitioning, scrollToSlide]);
+  }, [activeIndex, slidesLength, isTransitioning, scrollToSlide]);
 
   // Pause auto-slide on hover
   const [isHovered, setIsHovered] = useState(false);
@@ -104,52 +149,79 @@ export default function Home() {
             }}
           >
             <CarouselContent>
-              {slides.map((slide, index) => (
-                <CarouselItem key={index}>
-                  <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-md">
-                    <img
-                      src={slide.img}
-                      alt={`Slide ${index + 1}`}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/35" />
-
-                    <div className="relative z-10 h-full flex flex-col items-center justify-center text-white text-xl md:text-3xl font-bold transition-all">
-                      <div className="text-center px-4">
-                        <span className="block animate-in slide-in-from-bottom-2 duration-700 delay-100">
-                          {slide.text}
-                        </span>
-                        <Button
-                          className="mt-3 bg-primary text-white hover:bg-primary-50/90 transition-transform hover:scale-105 duration-300 animate-in slide-in-from-bottom-4 duration-700 delay-200"
-                          size="lg"
-                        >
-                          Shop Now
-                        </Button>
+              {bannersLoading
+                ? Array.from({ length: 4 }).map((_, index) => (
+                    <CarouselItem key={`skeleton-${index}`}>
+                      <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-md border bg-muted/60 animate-pulse" />
+                    </CarouselItem>
+                  ))
+                : banners.length === 0 ? (
+                    <CarouselItem key="empty-banner">
+                      <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-md border bg-muted/40">
+                        <div className="absolute inset-0 bg-linear-to-b from-muted/30 to-muted/60" />
+                        <div className="relative z-10 h-full flex items-center justify-center p-6">
+                          <div className="text-center">
+                            <div className="text-lg font-semibold text-foreground">
+                              No banners
+                            </div>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Add active banners to show here.
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </CarouselItem>
+                  ) : (
+                    banners.map((banner) => (
+                    <CarouselItem key={banner.id}>
+                      <div className="relative h-48 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-md">
+                        <img
+                          src={banner.image}
+                          alt={banner.title}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/35" />
 
-                    {/* DOTS inside banner */}
-                   <div className="absolute z-10 bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2  animate-in fade-in duration-500">
-  {slides.map((_, dotIndex) => (
-    <button
-      key={dotIndex}
-      onClick={() => scrollToSlide(dotIndex)}
-      className={`relative h-2 rounded-full transition-all duration-300 ${
-        activeIndex === dotIndex
-          ? "w-6 bg-white"
-          : "w-2 bg-white/40 hover:bg-white/70"
-      }`}
-    >
-      {/* Active glow */}
-      {activeIndex === dotIndex && (
-        <span className="absolute inset-0 rounded-full bg-white/40 blur-sm" />
-      )}
-    </button>
-  ))}
-</div>
-                  </div>
-                </CarouselItem>
-              ))}
+                        <div className="relative z-10 h-full flex flex-col items-center justify-center text-white text-xl md:text-3xl font-bold transition-all">
+                          <div className="text-center px-4">
+                            <span className="block animate-in slide-in-from-bottom-2 duration-700 delay-100">
+                              {banner.title}
+                            </span>
+                            {banner.description ? (
+                              <p className="mt-2 text-sm md:text-base font-medium text-white/90 max-w-xl mx-auto">
+                                {banner.description}
+                              </p>
+                            ) : null}
+                            <Button
+                              className="mt-3 bg-primary text-white hover:bg-primary-50/90 transition-transform hover:scale-105 duration-300 animate-in slide-in-from-bottom-4 duration-700 delay-200"
+                              size="lg"
+                            >
+                              Shop Now
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* DOTS inside banner */}
+                        <div className="absolute z-10 bottom-5 left-1/2 -translate-x-1/2 flex items-center gap-2 animate-in fade-in duration-500">
+                          {Array.from({ length: slidesLength }).map((_, dotIndex) => (
+                            <button
+                              key={dotIndex}
+                              onClick={() => scrollToSlide(dotIndex)}
+                              className={`relative h-2 rounded-full transition-all duration-300 ${
+                                activeIndex === dotIndex
+                                  ? "w-6 bg-white"
+                                  : "w-2 bg-white/40 hover:bg-white/70"
+                              }`}
+                            >
+                              {activeIndex === dotIndex ? (
+                                <span className="absolute inset-0 rounded-full bg-white/40 blur-sm" />
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </CarouselItem>
+                  )))}
             </CarouselContent>
 
             {/* LEFT ARROW inside banner */}
@@ -158,6 +230,12 @@ export default function Home() {
             {/* RIGHT ARROW inside banner */}
             <CarouselNext className="absolute hidden md:inline-flex right-4 top-1/2 -translate-y-1/2 z-10 text-white p-2 bg-black/30 rounded-full hover:bg-black/50 transition-all duration-300 hover:scale-110 hover:bg-black/60 animate-in fade-in duration-500" />
           </Carousel>
+
+          {bannersError ? (
+            <div className="mt-3 rounded-md border bg-card p-3 text-sm text-destructive">
+              {bannersError}
+            </div>
+          ) : null}
         </div>
 
         {/* Top categories (4 visible, swipe for more) */}
@@ -170,33 +248,61 @@ export default function Home() {
 	            >
 	              See All
 	            </Link>
-	          </div>
+		          </div>
 
-          <Carousel
-            className="w-full"
-            opts={{ align: "start", dragFree: true, containScroll: "trimSnaps" }}
-          >
-            <CarouselContent>
-              {categories.map(({ label, href, icon: Icon }) => (
-                <CarouselItem
-                  key={label}
-                  className="basis-1/2 sm:basis-1/3  md:basis-1/6"
-                >
-                  <Link
-                    href={href}
-                    className="group flex w-full p-2 flex-col items-center rounded-md bg-card  transition-colors"
-                    aria-label={label}
-                  >
-                    <div className="flex w-full aspect-square items-center justify-center rounded-md bg-primary/8 text-primary ">
-                      <img src="/images/STU_8189-cr-450x672.jpg" alt="" className="w-full h-full rounded-md hover:scale-105 transition-transform duration-300" />
-                    </div>
-                    <div className="mt-3 truncate text-sm font-semibold">
-                      {label}
-                    </div>
-                  </Link>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
+              {categoriesError ? (
+                <div className="rounded-md border bg-card p-3 text-sm text-destructive">
+                  {categoriesError}
+                </div>
+              ) : null}
+
+	          <Carousel
+	            className="w-full"
+	            opts={{ align: "start", dragFree: true, containScroll: "trimSnaps" }}
+	          >
+	            <CarouselContent>
+	              {categoriesLoading
+	                ? Array.from({ length: 6 }).map((_, i) => (
+	                    <CarouselItem
+	                      key={i}
+	                      className="basis-1/2 sm:basis-1/3 md:basis-1/6"
+	                    >
+	                      <div className="flex w-full p-2 flex-col items-center rounded-md bg-card">
+	                        <div className="w-full aspect-square rounded-md bg-muted animate-pulse" />
+	                        <div className="mt-3 h-4 w-2/3 rounded bg-muted animate-pulse" />
+	                      </div>
+	                    </CarouselItem>
+	                  ))
+	                : topCategories.map((cat) => (
+	                    <CarouselItem
+	                      key={cat.id}
+	                      className="basis-1/2 sm:basis-1/3  md:basis-1/6"
+	                    >
+	                      <Link
+	                        href={`/category/${cat.id}`}
+	                        className="group flex w-full p-2 flex-col items-center rounded-md bg-card transition-colors"
+	                        aria-label={cat.name}
+	                      >
+	                        <div className="flex w-full aspect-square items-center justify-center rounded-md bg-primary/8 text-primary overflow-hidden">
+	                          {cat.avatar ? (
+	                            <img
+	                              src={cat.avatar}
+	                              alt={cat.name}
+	                              className="w-full h-full rounded-md object-cover hover:scale-105 transition-transform duration-300"
+	                            />
+	                          ) : (
+	                            <div className="w-full h-full rounded-md flex items-center justify-center bg-muted text-3xl font-semibold text-muted-foreground">
+	                              {cat.name.slice(0, 1).toUpperCase()}
+	                            </div>
+	                          )}
+	                        </div>
+	                        <div className="mt-3 truncate text-sm font-semibold">
+	                          {cat.name}
+	                        </div>
+	                      </Link>
+	                    </CarouselItem>
+	                  ))}
+	            </CarouselContent>
 
             <CarouselPrevious className="hidden md:inline-flex -left-6" />
             <CarouselNext className="hidden md:inline-flex -right-6" />

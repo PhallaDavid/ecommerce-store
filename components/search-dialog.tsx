@@ -4,6 +4,35 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { X } from "lucide-react"
+import api from "@/utils/axios"
+
+type ApiSearchProduct = {
+  id: number
+  name: string
+  thumbnail?: string | null
+  current_price?: number | null
+  original_price?: string | number | null
+  promo_price?: string | number | null
+}
+
+const FALLBACK_IMG = "/images/STU_8189-cr-450x672.jpg"
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
+}
+
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value)
+}
 
 interface SearchDialogProps {
   isOpen: boolean
@@ -13,6 +42,54 @@ interface SearchDialogProps {
 }
 
 export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange }: SearchDialogProps) {
+  const [results, setResults] = React.useState<ApiSearchProduct[]>([])
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    if (!isOpen) return
+
+    const q = searchQuery.trim()
+    if (!q) {
+      setResults([])
+      setError(null)
+      setIsLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    const timeout = window.setTimeout(async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const res = await api.get<unknown>("/products/search", {
+          params: { q },
+          signal: controller.signal,
+        })
+
+        const data = res.data as { products?: unknown } | unknown
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray((data as any)?.products)
+            ? (data as any).products
+            : []
+
+        setResults(list as ApiSearchProduct[])
+      } catch (e: unknown) {
+        // ignore aborts
+        if (controller.signal.aborted) return
+        setResults([])
+        setError(e instanceof Error ? e.message : "Search failed")
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false)
+      }
+    }, 300)
+
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeout)
+    }
+  }, [isOpen, searchQuery])
 
   return (
     <div
@@ -91,15 +168,61 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
               <p className="text-sm text-muted-foreground mb-4">
                 Search results for: <span className="font-medium">{searchQuery}</span>
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {['Product 1', 'Product 2', 'Product 3', 'Product 4', 'Product 5', 'Product 6'].map((product, index) => (
-                  <div key={index} className="border rounded-lg p-4 hover: transition-shadow">
-                    <div className="aspect-square bg-gray-200 rounded mb-2"></div>
-                    <h3 className="font-medium">{product}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Product description</p>
-                  </div>
-                ))}
-              </div>
+              {error ? (
+                <div className="mb-4 rounded-md border bg-card p-3 text-sm text-destructive">
+                  {error}
+                </div>
+              ) : null}
+
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="aspect-square bg-muted animate-pulse rounded mb-3" />
+                      <div className="h-4 w-3/4 bg-muted animate-pulse rounded" />
+                      <div className="mt-2 h-4 w-1/2 bg-muted animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : results.length === 0 ? (
+                <div className="rounded-md border bg-card p-6 text-center text-sm text-muted-foreground">
+                  No products found.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {results.map((p) => {
+                    const original = toNumber(p.original_price)
+                    const current =
+                      (typeof p.current_price === "number" && Number.isFinite(p.current_price)
+                        ? p.current_price
+                        : null) ??
+                      toNumber(p.promo_price) ??
+                      original ??
+                      0
+
+                    return (
+                      <a
+                        key={p.id}
+                        href={`/products/${p.id}`}
+                        className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                        onClick={onClose}
+                      >
+                        <div className="aspect-square bg-muted rounded mb-3 overflow-hidden">
+                          <img
+                            src={p.thumbnail || FALLBACK_IMG}
+                            alt={p.name}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <h3 className="font-medium line-clamp-1">{p.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {formatPrice(current)}
+                        </p>
+                      </a>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-12">

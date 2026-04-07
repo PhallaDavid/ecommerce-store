@@ -27,6 +27,7 @@ import { SearchDialog } from "@/components/search-dialog"
 import { CartSheet } from "@/components/CartSheet"
 import { FavouritesSheet } from "@/components/FavouritesSheet"
 import { getCart, getFavourites, subscribeStore } from "@/lib/store"
+import api from "@/utils/axios"
 import {
   Heart,
   ShoppingCart,
@@ -109,19 +110,65 @@ const CambodiaFlag = () => (
 )
 
 interface AuthUser {
-  name: string
+  name?: string
   email?: string
   phone?: string
   avatar?: string
 }
 
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0])
+type Category = {
+  id: number
+  name: string
+  description: string | null
+  avatar: string | null
+  created_at: string
+}
+
+type Brand = {
+  id: number
+  name: string
+  description: string | null
+  avatar: string | null
+  created_at: string
+}
+
+function normalizeAuthUser(raw: unknown): AuthUser | null {
+  if (!raw || typeof raw !== "object") return null
+  const obj = raw as Record<string, unknown>
+
+  const rawName =
+    (typeof obj.name === "string" ? obj.name : undefined) ??
+    (typeof obj.fullName === "string" ? obj.fullName : undefined) ??
+    (typeof obj.username === "string" ? obj.username : undefined)
+
+  const name =
+    typeof rawName === "string" && rawName.trim()
+      ? rawName.trim()
+      : typeof obj.email === "string" && obj.email.includes("@")
+        ? obj.email.split("@")[0]
+        : typeof obj.phone === "string"
+          ? obj.phone
+          : undefined
+
+  return {
+    name,
+    email: typeof obj.email === "string" ? obj.email : undefined,
+    phone: typeof obj.phone === "string" ? obj.phone : undefined,
+    avatar: typeof obj.avatar === "string" ? obj.avatar : undefined,
+  }
+}
+
+function getInitials(name?: string | null) {
+  const safeName = (name ?? "").trim()
+  if (!safeName) return "?"
+  const initials = safeName
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0] ?? "")
     .join("")
     .toUpperCase()
     .slice(0, 2)
+  return initials || "?"
 }
 
 // Mobile accordion nav item
@@ -191,11 +238,65 @@ export function Header() {
   const [authUser, setAuthUser] = React.useState<AuthUser | null>(null)
   const [favCount, setFavCount] = React.useState(0)
   const [cartCount, setCartCount] = React.useState(0)
+  const [categories, setCategories] = React.useState<Category[]>([])
+  const [categoriesLoading, setCategoriesLoading] = React.useState(false)
+  const [categoriesError, setCategoriesError] = React.useState<string | null>(null)
+  const [brands, setBrands] = React.useState<Brand[]>([])
+  const [brandsLoading, setBrandsLoading] = React.useState(false)
+  const [brandsError, setBrandsError] = React.useState<string | null>(null)
 
   // Hydration safety: ensure sidebar is closed on mount
   React.useEffect(() => {
     setMounted(true)
     setMobileMenuOpen(false)
+  }, [])
+
+  // Load categories for navigation menus
+  React.useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setCategoriesLoading(true)
+      setCategoriesError(null)
+      try {
+        const res = await api.get<Category[]>("/categories")
+        if (cancelled) return
+        setCategories(Array.isArray(res.data) ? res.data : [])
+      } catch (e: unknown) {
+        if (cancelled) return
+        setCategories([])
+        setCategoriesError(
+          e instanceof Error ? e.message : "Failed to load categories"
+        )
+      } finally {
+        if (!cancelled) setCategoriesLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Load brands for navigation menus
+  React.useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setBrandsLoading(true)
+      setBrandsError(null)
+      try {
+        const res = await api.get<Brand[]>("/brands")
+        if (cancelled) return
+        setBrands(Array.isArray(res.data) ? res.data : [])
+      } catch (e: unknown) {
+        if (cancelled) return
+        setBrands([])
+        setBrandsError(e instanceof Error ? e.message : "Failed to load brands")
+      } finally {
+        if (!cancelled) setBrandsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   React.useEffect(() => {
@@ -214,12 +315,32 @@ export function Header() {
     const userRaw = localStorage.getItem("user_data")
     if (token && userRaw) {
       try {
-        const user = JSON.parse(userRaw)
+        const user = normalizeAuthUser(JSON.parse(userRaw))
         setAuthUser(user)
       } catch {
         setAuthUser(null)
       }
     }
+  }, [])
+
+  // Refresh profile from API (keeps header up-to-date after update-profile)
+  React.useEffect(() => {
+    const token = localStorage.getItem("auth_token")
+    if (!token) return
+
+    ;(async () => {
+      try {
+        const profileRes = await api.get("/auth/profile")
+        const rawProfile = profileRes.data?.profile ?? profileRes.data?.user ?? profileRes.data
+        const user = normalizeAuthUser(rawProfile)
+        if (user) {
+          localStorage.setItem("user_data", JSON.stringify(rawProfile))
+          setAuthUser(user)
+        }
+      } catch {
+        // Ignore network/auth errors; header will fall back to localStorage.
+      }
+    })()
   }, [])
 
   // Re-check auth when dialog closes (in case user just logged in)
@@ -229,7 +350,7 @@ export function Header() {
     const userRaw = localStorage.getItem("user_data")
     if (token && userRaw) {
       try {
-        setAuthUser(JSON.parse(userRaw))
+        setAuthUser(normalizeAuthUser(JSON.parse(userRaw)))
       } catch {
         setAuthUser(null)
       }
@@ -275,6 +396,8 @@ export function Header() {
   }
 
   const closeSidebar = () => setMobileMenuOpen(false)
+  const navCategories = React.useMemo(() => categories.slice(0, 12), [categories])
+  const navBrands = React.useMemo(() => brands.slice(0, 8), [brands])
 
   return (
     <>
@@ -372,19 +495,22 @@ export function Header() {
               </Button>
 
               {/* Desktop: Avatar dropdown if logged in, else User icon */}
-              <div className="hidden md:flex">
-                {authUser ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-                        <Avatar className="h-8 w-8 cursor-pointer">
-                          <AvatarImage src={authUser.avatar} alt={authUser.name} />
-                          <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
-                            {getInitials(authUser.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                      </button>
-                    </DropdownMenuTrigger>
+	              <div className="hidden md:flex items-center gap-2">
+		                {authUser ? (
+		                  <DropdownMenu>
+		                    <DropdownMenuTrigger asChild>
+		                      <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+		                        <Avatar className="h-8 w-8 cursor-pointer">
+		                          <AvatarImage src={authUser.avatar} alt={authUser.name ?? "User"} />
+		                          <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
+		                            {getInitials(authUser.name)}
+		                          </AvatarFallback>
+		                        </Avatar>
+                            <span className="max-w-[140px] text-sm font-medium truncate">
+                              {authUser.name ?? "Account"}
+                            </span>
+		                      </button>
+	                    </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-52">
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => router.push("/profile")}>
@@ -467,22 +593,22 @@ export function Header() {
             </div>
 
             {/* User info if logged in */}
-            {authUser && (
-              <div className="flex items-center gap-3 px-4 py-3 shrink-0">
-                <Avatar className="h-9 w-9">
-                  <AvatarImage src={authUser.avatar} alt={authUser.name} />
-                  <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
-                    {getInitials(authUser.name)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{authUser.name}</span>
-                  <span className="text-xs text-muted-foreground truncate">
-                    {authUser.email || authUser.phone}
-                  </span>
-                </div>
-              </div>
-            )}
+	            {authUser && (
+	              <div className="flex items-center gap-3 px-4 py-3 shrink-0">
+	                <Avatar className="h-9 w-9">
+	                  <AvatarImage src={authUser.avatar} alt={authUser.name ?? "User"} />
+	                  <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
+	                    {getInitials(authUser.name)}
+	                  </AvatarFallback>
+	                </Avatar>
+	                <div className="flex flex-col min-w-0">
+	                  <span className="text-sm font-medium truncate">{authUser.name ?? "Account"}</span>
+	                  <span className="text-xs text-muted-foreground truncate">
+	                    {authUser.email || authUser.phone}
+	                  </span>
+	                </div>
+	              </div>
+	            )}
 
             {/* Sidebar Nav Items */}
             <div className="flex-1 overflow-y-auto">
@@ -499,59 +625,59 @@ export function Header() {
 
               {/* ── Categories ── */}
               <MobileNavSection label="Categories">
-                {/* Electronics */}
-                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
-                  Electronics
-                </p>
-                <MobileNavLink href="/categories/electronics/smartphones" onClick={closeSidebar}>Smartphones</MobileNavLink>
-                <MobileNavLink href="/categories/electronics/laptops" onClick={closeSidebar}>Laptops</MobileNavLink>
-                <MobileNavLink href="/categories/electronics/tablets" onClick={closeSidebar}>Tablets</MobileNavLink>
-                <MobileNavLink href="/categories/electronics/accessories" onClick={closeSidebar}>Accessories</MobileNavLink>
-
-                {/* Clothing */}
-                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
-                  Clothing
-                </p>
-                <MobileNavLink href="/categories/clothing/men" onClick={closeSidebar}>Men's Clothing</MobileNavLink>
-                <MobileNavLink href="/categories/clothing/women" onClick={closeSidebar}>Women's Clothing</MobileNavLink>
-                <MobileNavLink href="/categories/clothing/kids" onClick={closeSidebar}>Kids Clothing</MobileNavLink>
-                <MobileNavLink href="/categories/clothing/shoes" onClick={closeSidebar}>Shoes & Footwear</MobileNavLink>
-
-                {/* Home & Garden */}
-                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
-                  Home & Garden
-                </p>
-                <MobileNavLink href="/categories/home/furniture" onClick={closeSidebar}>Furniture</MobileNavLink>
-                <MobileNavLink href="/categories/home/decor" onClick={closeSidebar}>Home Decor</MobileNavLink>
-                <MobileNavLink href="/categories/home/kitchen" onClick={closeSidebar}>Kitchen & Dining</MobileNavLink>
-                <MobileNavLink href="/categories/home/garden" onClick={closeSidebar}>Garden & Outdoor</MobileNavLink>
-
-                {/* Beauty & Health */}
-                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
-                  Beauty & Health
-                </p>
-                <MobileNavLink href="/categories/beauty/skincare" onClick={closeSidebar}>Skincare</MobileNavLink>
-                <MobileNavLink href="/categories/beauty/cosmetics" onClick={closeSidebar}>Cosmetics</MobileNavLink>
-                <MobileNavLink href="/categories/beauty/fragrances" onClick={closeSidebar}>Fragrances</MobileNavLink>
-                <MobileNavLink href="/categories/beauty/health" onClick={closeSidebar}>Health & Wellness</MobileNavLink>
-
-                {/* Sports & Outdoors */}
-                <p className="text-xs font-semibold text-muted-foreground  px-3 pt-3 pb-1">
-                  Sports & Outdoors
-                </p>
-                <MobileNavLink href="/categories/sports/fitness" onClick={closeSidebar}>Fitness Equipment</MobileNavLink>
-                <MobileNavLink href="/categories/sports/outdoor" onClick={closeSidebar}>Outdoor Gear</MobileNavLink>
-                <MobileNavLink href="/categories/sports/cycling" onClick={closeSidebar}>Cycling</MobileNavLink>
-                <MobileNavLink href="/categories/sports/water-sports" onClick={closeSidebar}>Water Sports</MobileNavLink>
+                {categoriesError ? (
+                  <div className="px-3 py-2 text-sm text-destructive">
+                    Failed to load categories
+                  </div>
+                ) : null}
+                {categoriesLoading && navCategories.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    Loading categories...
+                  </div>
+                ) : null}
+	                {navCategories.map((c) => (
+	                  <MobileNavLink key={c.id} href={`/category/${c.id}`} onClick={closeSidebar}>
+	                    <span className="flex items-center gap-2 min-w-0">
+	                      {c.avatar ? (
+	                        <img
+	                          src={c.avatar}
+	                          alt={c.name}
+	                          className="h-7 w-7 rounded-md object-cover bg-muted shrink-0"
+	                        />
+	                      ) : (
+	                        <span className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-[11px] font-semibold text-muted-foreground shrink-0">
+	                          {c.name.slice(0, 1).toUpperCase()}
+	                        </span>
+	                      )}
+	                      <span className="truncate">{c.name}</span>
+	                    </span>
+	                  </MobileNavLink>
+	                ))}
+                <MobileNavLink href="/categories" onClick={closeSidebar}>
+                  View all categories
+                </MobileNavLink>
               </MobileNavSection>
 
               {/* ── Brands ── */}
               <MobileNavSection label="Brands">
-                <MobileNavLink href="/brands/apple" onClick={closeSidebar}>Apple</MobileNavLink>
-                <MobileNavLink href="/brands/nike" onClick={closeSidebar}>Nike</MobileNavLink>
-                <MobileNavLink href="/brands/samsung" onClick={closeSidebar}>Samsung</MobileNavLink>
-                <MobileNavLink href="/brands/adidas" onClick={closeSidebar}>Adidas</MobileNavLink>
-                <MobileNavLink href="/brands/sony" onClick={closeSidebar}>Sony</MobileNavLink>
+                {brandsError ? (
+                  <div className="px-3 py-2 text-sm text-destructive">
+                    Failed to load brands
+                  </div>
+                ) : null}
+                {brandsLoading && navBrands.length === 0 ? (
+                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                    Loading brands...
+                  </div>
+                ) : null}
+                {navBrands.map((b) => (
+                  <MobileNavLink key={b.id} href={`/brands/${b.id}`} onClick={closeSidebar}>
+                    {b.name}
+                  </MobileNavLink>
+                ))}
+                <MobileNavLink href="/brands" onClick={closeSidebar}>
+                  View all brands
+                </MobileNavLink>
               </MobileNavSection>
 
               {/* ── Simple links ── */}
@@ -653,162 +779,141 @@ export function Header() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="text-sm font-medium">Categories</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 w-[600px] lg:w-[700px] lg:grid-cols-[.75fr_1fr]">
-                    <div className="grid gap-3">
-                      <div className="grid gap-3">
-                        <NavigationMenuLink asChild>
-                          <Link
-                            href="/categories/electronics"
-                            className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:"
-                          >
-                            <div className="mb-2 mt-4 text-lg font-medium">
-                              Electronics
-                            </div>
-                            <p className="text-sm leading-tight text-muted-foreground">
-                              Latest smartphones, laptops, and gadgets
-                            </p>
-                          </Link>
-                        </NavigationMenuLink>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Electronics</h4>
-                        <div className="space-y-1">
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/electronics/smartphones" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Smartphones</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/electronics/laptops" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Laptops</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/electronics/tablets" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Tablets</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/electronics/accessories" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Accessories</Link>
-                          </NavigationMenuLink>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Clothing</h4>
-                        <div className="space-y-1">
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/clothing/men" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Men's Clothing</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/clothing/women" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Women's Clothing</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/clothing/kids" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Kids Clothing</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/clothing/shoes" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Shoes & Footwear</Link>
-                          </NavigationMenuLink>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Home & Garden</h4>
-                        <div className="space-y-1">
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/home/furniture" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Furniture</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/home/decor" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Home Decor</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/home/kitchen" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Kitchen & Dining</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/home/garden" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Garden & Outdoor</Link>
-                          </NavigationMenuLink>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Beauty & Health</h4>
-                        <div className="space-y-1">
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/beauty/skincare" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Skincare</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/beauty/cosmetics" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Cosmetics</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/beauty/fragrances" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Fragrances</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/beauty/health" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Health & Wellness</Link>
-                          </NavigationMenuLink>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Sports & Outdoors</h4>
-                        <div className="space-y-1">
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/sports/fitness" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Fitness Equipment</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/sports/outdoor" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Outdoor Gear</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/sports/cycling" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Cycling</Link>
-                          </NavigationMenuLink>
-                          <NavigationMenuLink asChild>
-                            <Link href="/categories/sports/water-sports" className="block rounded-md p-2 text-sm leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">Water Sports</Link>
-                          </NavigationMenuLink>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+	              <NavigationMenuItem>
+	                <NavigationMenuTrigger className="text-sm font-medium">Categories</NavigationMenuTrigger>
+	                <NavigationMenuContent>
+	                  <div className="grid gap-3 p-4 w-[420px] lg:w-[560px] lg:grid-cols-[.75fr_1fr]">
+	                    <div className="grid gap-3">
+	                      <NavigationMenuLink asChild>
+	                        <Link
+	                          href="/categories"
+	                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:"
+	                        >
+	                          <div className="mb-2 mt-4 text-lg font-medium">Browse Categories</div>
+	                          <p className="text-sm leading-tight text-muted-foreground">
+	                            Find products by category.
+	                          </p>
+	                        </Link>
+	                      </NavigationMenuLink>
+	                      {categoriesError ? (
+	                        <p className="text-xs text-destructive px-1">
+	                          Failed to load categories.
+	                        </p>
+	                      ) : null}
+	                      {categoriesLoading && navCategories.length === 0 ? (
+	                        <p className="text-xs text-muted-foreground px-1">
+	                          Loading...
+	                        </p>
+	                      ) : null}
+	                    </div>
+		                    <div className="grid grid-cols-2 gap-3">
+		                      {navCategories.map((c) => (
+		                        <NavigationMenuLink asChild key={c.id}>
+		                          <Link
+		                            href={`/category/${c.id}`}
+		                            className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary"
+		                          >
+		                            <div className="flex items-center gap-2">
+		                              {c.avatar ? (
+		                                <img
+		                                  src={c.avatar}
+		                                  alt={c.name}
+		                                  className="h-8 w-8 rounded-md object-cover bg-muted shrink-0"
+		                                />
+		                              ) : (
+		                                <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground shrink-0">
+		                                  {c.name.slice(0, 1).toUpperCase()}
+		                                </div>
+		                              )}
+		                              <div className="text-sm font-medium leading-none truncate">
+		                                {c.name}
+		                              </div>
+		                            </div>
+		                          </Link>
+		                        </NavigationMenuLink>
+		                      ))}
+		                      <NavigationMenuLink asChild>
+		                        <Link
+		                          href="/categories"
+		                          className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary"
+		                        >
+		                          <div className="text-sm font-medium leading-none">View all</div>
+		                        </Link>
+		                      </NavigationMenuLink>
+		                    </div>
+	                  </div>
+	                </NavigationMenuContent>
+	              </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="text-sm font-medium">Brands</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <div className="grid gap-3 p-4 w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                    <div className="grid gap-3">
-                      <NavigationMenuLink asChild>
-                        <Link
-                          href="/brands/apple"
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:"
-                        >
-                          <div className="mb-2 mt-4 text-lg font-medium">Apple</div>
-                          <p className="text-sm leading-tight text-muted-foreground">Premium electronics and devices</p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <NavigationMenuLink asChild>
-                        <Link href="/brands/nike" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">
-                          <div className="text-sm font-medium leading-none">Nike</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Athletic footwear and apparel</p>
-                        </Link>
-                      </NavigationMenuLink>
-                      <NavigationMenuLink asChild>
-                        <Link href="/brands/samsung" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">
-                          <div className="text-sm font-medium leading-none">Samsung</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Electronics and smart devices</p>
-                        </Link>
-                      </NavigationMenuLink>
-                      <NavigationMenuLink asChild>
-                        <Link href="/brands/adidas" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">
-                          <div className="text-sm font-medium leading-none">Adidas</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Sportswear and lifestyle products</p>
-                        </Link>
-                      </NavigationMenuLink>
-                      <NavigationMenuLink asChild>
-                        <Link href="/brands/sony" className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary">
-                          <div className="text-sm font-medium leading-none">Sony</div>
-                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">Audio, gaming, and entertainment</p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </div>
-                  </div>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+	              <NavigationMenuItem>
+	                <NavigationMenuTrigger className="text-sm font-medium">Brands</NavigationMenuTrigger>
+	                <NavigationMenuContent>
+	                  <div className="grid gap-3 p-4 w-[420px] lg:w-[560px] lg:grid-cols-[.75fr_1fr]">
+	                    <div className="grid gap-3">
+	                      <NavigationMenuLink asChild>
+	                        <Link
+	                          href="/brands"
+	                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:"
+	                        >
+	                          <div className="mb-2 mt-4 text-lg font-medium">Browse Brands</div>
+	                          <p className="text-sm leading-tight text-muted-foreground">
+	                            Explore all brands and new arrivals.
+	                          </p>
+	                        </Link>
+	                      </NavigationMenuLink>
+	                      {brandsError ? (
+	                        <p className="text-xs text-destructive px-1">
+	                          Failed to load brands.
+	                        </p>
+	                      ) : null}
+	                      {brandsLoading && navBrands.length === 0 ? (
+	                        <p className="text-xs text-muted-foreground px-1">
+	                          Loading...
+	                        </p>
+	                      ) : null}
+	                    </div>
+	                    <div className="grid grid-cols-2 gap-3">
+	                      {navBrands.map((b) => (
+	                        <NavigationMenuLink asChild key={b.id}>
+                           
+	                          <Link
+	                            href={`/brands/${b.id}`}
+	                            className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary"
+	                          >
+	                            <div className="flex items-center gap-2">
+	                              {b.avatar ? (
+	                                <img
+	                                  src={b.avatar}
+	                                  alt={b.name}
+	                                  className="h-8 w-8 rounded-md object-cover bg-muted shrink-0"
+	                                />
+	                              ) : (
+	                                <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground shrink-0">
+	                                  {b.name.slice(0, 1).toUpperCase()}
+	                                </div>
+	                              )}
+	                              <div className="text-sm font-medium leading-none truncate">
+	                                {b.name}
+	                              </div>
+	                            </div>
+	                          </Link>
+	                        </NavigationMenuLink>
+	                      ))}
+	                      <NavigationMenuLink asChild>
+	                        <Link
+	                          href="/brands"
+	                          className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary"
+	                        >
+	                          <div className="text-sm font-medium leading-none">View all</div>
+	                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+	                            See every brand
+	                          </p>
+	                        </Link>
+	                      </NavigationMenuLink>
+	                    </div>
+	                  </div>
+	                </NavigationMenuContent>
+	              </NavigationMenuItem>
 
               <NavigationMenuItem>
                 <NavigationMenuLink href="/deals" className={navigationMenuTriggerStyle()}>

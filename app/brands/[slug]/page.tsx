@@ -2,15 +2,24 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Heart, ShoppingCart } from "lucide-react"
+import { Heart, Loader2, ShoppingCart } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { addToCart, getFavourites, subscribeStore, toggleFavourite } from "@/lib/store"
+import api from "@/utils/axios"
 
 type PageProps = {
   params: Promise<{ slug: string }>
+}
+
+type Brand = {
+  id: number
+  name: string
+  description: string | null
+  avatar: string | null
+  created_at: string
 }
 
 const allProducts = [
@@ -70,6 +79,15 @@ function titleFromSlug(slug: string) {
     .replace(/\b\w/g, (m) => m.toUpperCase())
 }
 
+function slugify(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+}
+
 function formatPrice(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -82,7 +100,42 @@ type SortValue = "new" | "price_asc" | "price_desc"
 
 export default function BrandPage({ params }: PageProps) {
   const { slug } = React.use(params)
-  const brandTitle = titleFromSlug(slug)
+  const [brand, setBrand] = React.useState<Brand | null>(null)
+  const [brandLoading, setBrandLoading] = React.useState(false)
+  const [brandError, setBrandError] = React.useState<string | null>(null)
+
+  const brandId = React.useMemo(() => {
+    const n = Number(slug)
+    return Number.isFinite(n) ? n : null
+  }, [slug])
+
+  React.useEffect(() => {
+    if (brandId == null) return
+    let cancelled = false
+    ;(async () => {
+      setBrandLoading(true)
+      setBrandError(null)
+      try {
+        const res = await api.get<Brand[]>("/brands")
+        const found = Array.isArray(res.data)
+          ? res.data.find((b) => b.id === brandId) ?? null
+          : null
+        if (!cancelled) setBrand(found)
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setBrand(null)
+          setBrandError(e instanceof Error ? e.message : "Failed to load brand")
+        }
+      } finally {
+        if (!cancelled) setBrandLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [brandId])
+
+  const brandTitle = brand?.name ?? titleFromSlug(slug)
   const [sort, setSort] = React.useState<SortValue>("new")
   const [wishlisted, setWishlisted] = React.useState<Record<string, boolean>>({})
 
@@ -96,11 +149,12 @@ export default function BrandPage({ params }: PageProps) {
   }, [])
 
   const products = React.useMemo(() => {
-    const base = allProducts.filter((p) => p.brand === slug)
+    const filterKey = brand ? slugify(brand.name) : slug
+    const base = allProducts.filter((p) => p.brand === filterKey)
     if (sort === "price_asc") return [...base].sort((a, b) => a.price - b.price)
     if (sort === "price_desc") return [...base].sort((a, b) => b.price - a.price)
     return base
-  }, [slug, sort])
+  }, [brand, slug, sort])
 
   return (
     <div className="py-8">
@@ -124,6 +178,16 @@ export default function BrandPage({ params }: PageProps) {
               <p className="text-sm text-muted-foreground">
                 {products.length} products
               </p>
+              {brandLoading ? (
+                <p className="mt-2 inline-flex items-center text-xs text-muted-foreground">
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Loading brand details
+                </p>
+              ) : brandError ? (
+                <p className="mt-2 text-xs text-destructive">{brandError}</p>
+              ) : brand?.description ? (
+                <p className="mt-2 text-sm text-muted-foreground">{brand.description}</p>
+              ) : null}
             </div>
 
             <div className="flex items-center gap-2">

@@ -12,57 +12,40 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
+import api from "@/utils/axios"
+import { getFavourites, isFavourite, subscribeStore, toggleFavourite } from "@/lib/store"
 
-const products = [
-  {
-    id: "p1",
-    name: "Classic Tee",
-    href: "/products/p1",
-    image: "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/Homepage%20Collections/Category%20Highlight/MAR26-WEB%20Homepage_WOMEN_Tops.jpg",
-    price: 29.99,
-    compareAt: 39.99,
-  },
-  {
-    id: "p2",
-    name: "Street Hoodie",
-    href: "/products/p2",
-    image: "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/Homepage%20Collections/Category%20Highlight/MAR26-WEB%20Homepage_WOMEN_Tops.jpg",
-    price: 49.0,
-    compareAt: 69.0,
-  },
-  {
-    id: "p3",
-    name: "Everyday Sneakers",
-    href: "/products/p3",
-    image: "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/Homepage%20Collections/Category%20Highlight/MAR26-WEB%20Homepage_WOMEN_Tops.jpg",
-    price: 79.0,
-    compareAt: 99.0,
-  },
-  {
-    id: "p4",
-    name: "Minimal Watch",
-    href: "/products/p4",
-    image: "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/Homepage%20Collections/Category%20Highlight/MAR26-WEB%20Homepage_WOMEN_Tops.jpg",
-    price: 119.0,
-    compareAt: 149.0,
-  },
-  {
-    id: "p5",
-    name: "Wireless Headphones",
-    href: "/products/p5",
-    image: "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/Homepage%20Collections/Category%20Highlight/MAR26-WEB%20Homepage_WOMEN_Tops.jpg",
-    price: 89.0,
-    compareAt: 109.0,
-  },
-  {
-    id: "p6",
-    name: "Smartphone Case",
-    href: "/products/p6",
-    image: "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/Homepage%20Collections/Category%20Highlight/MAR26-WEB%20Homepage_WOMEN_Tops.jpg",
-    price: 15.0,
-    compareAt: 25.0,
-  },
-] as const
+type ApiProduct = {
+  id: number
+  name: string
+  thumbnail: string | null
+  original_price: string | number | null
+  promo_price: string | number | null
+  current_price: number | null
+  is_on_sale: boolean | null
+  status?: string | null
+  created_at?: string | null
+}
+
+type ProductCard = {
+  id: string
+  name: string
+  href: string
+  image: string
+  price: number
+  compareAt?: number
+}
+
+const FALLBACK_IMG = "/images/STU_8189-cr-450x672.jpg"
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
+}
 
 function formatPrice(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -73,6 +56,68 @@ function formatPrice(value: number) {
 }
 
 export function NewCollection() {
+  const [products, setProducts] = React.useState<ProductCard[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [favs, setFavs] = React.useState<Record<string, boolean>>({})
+
+  React.useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const res = await api.get<ApiProduct[]>("/products")
+        const list = Array.isArray(res.data) ? res.data : []
+        const mapped: ProductCard[] = list
+          .filter((p) => (p.status ? p.status === "active" : true))
+          .slice(0, 12)
+          .map((p) => {
+            const id = String(p.id)
+            const original = toNumber(p.original_price)
+            const current =
+              (typeof p.current_price === "number" && Number.isFinite(p.current_price)
+                ? p.current_price
+                : null) ??
+              toNumber(p.promo_price) ??
+              original ??
+              0
+
+            const compareAt =
+              original != null && original > current ? original : undefined
+
+            return {
+              id,
+              name: p.name,
+              href: `/products/${id}`,
+              image: p.thumbnail || FALLBACK_IMG,
+              price: current,
+              compareAt,
+            }
+          })
+
+        if (!cancelled) setProducts(mapped)
+      } catch (e: unknown) {
+        if (cancelled) return
+        setProducts([])
+        setError(e instanceof Error ? e.message : "Failed to load products")
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  React.useEffect(() => {
+    setFavs(Object.fromEntries(products.map((p) => [p.id, isFavourite(p.id)])))
+    return subscribeStore(() => {
+      const favSet = new Set(getFavourites().map((f) => f.id))
+      setFavs(Object.fromEntries(products.map((p) => [p.id, favSet.has(p.id)])))
+    })
+  }, [products])
+
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
@@ -85,15 +130,40 @@ export function NewCollection() {
         </Link>
       </div>
 
+      {error ? (
+        <div className="rounded-md border bg-card p-3 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
       <Carousel
         className="w-full"
         opts={{ align: "start", dragFree: true, containScroll: "trimSnaps" }}
       >
         <CarouselContent>
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <CarouselItem
+                  key={`skeleton-${i}`}
+                  className="basis-1/2 sm:basis-1/3 lg:basis-1/4"
+                >
+                  <div className="overflow-hidden rounded-md bg-card">
+                    <div className="aspect-[3/4] bg-muted animate-pulse" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
+                      <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))
+            : null}
+
           {products.map((product) => {
             const discountPercent =
-              product.compareAt > product.price
-                ? Math.round(((product.compareAt - product.price) / product.compareAt) * 100)
+              product.compareAt && product.compareAt > product.price
+                ? Math.round(
+                    ((product.compareAt - product.price) / product.compareAt) * 100
+                  )
                 : 0
 
             return (
@@ -123,9 +193,18 @@ export function NewCollection() {
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
+                        toggleFavourite({
+                          id: product.id,
+                          name: product.name,
+                          href: product.href,
+                          image: product.image,
+                          price: product.price,
+                          compareAt: product.compareAt,
+                        })
+                        setFavs((prev) => ({ ...prev, [product.id]: !prev[product.id] }))
                       }}
                     >
-                      <Heart className="h-4 w-4" />
+                      <Heart className={favs[product.id] ? "h-4 w-4 fill-primary text-primary" : "h-4 w-4"} />
                     </Button>
                   </div>
 
@@ -136,11 +215,16 @@ export function NewCollection() {
                         <span className="text-sm font-semibold text-primary">
                           {formatPrice(product.price)}
                         </span>
-                        <span className="text-sm font-semibold text-red-600">-{
-                          discountPercent}%</span>
-                        <span className="text-xs text-muted-foreground line-through">
-                          {formatPrice(product.compareAt)}
-                        </span>
+                        {discountPercent > 0 ? (
+                          <span className="text-sm font-semibold text-red-600">
+                            -{discountPercent}%
+                          </span>
+                        ) : null}
+                        {product.compareAt ? (
+                          <span className="text-xs text-muted-foreground line-through">
+                            {formatPrice(product.compareAt)}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -156,4 +240,3 @@ export function NewCollection() {
     </section>
   )
 }
-

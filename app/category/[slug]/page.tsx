@@ -2,15 +2,24 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Heart, ShoppingCart } from "lucide-react"
+import { Heart, Loader2, ShoppingCart } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { addToCart, getFavourites, subscribeStore, toggleFavourite } from "@/lib/store"
+import api from "@/utils/axios"
 
 type PageProps = {
   params: Promise<{ slug: string }>
+}
+
+type Category = {
+  id: number
+  name: string
+  description: string | null
+  avatar: string | null
+  created_at: string
 }
 
 const allProducts = [
@@ -86,6 +95,15 @@ function titleFromSlug(slug: string) {
     .replace(/\b\w/g, (m) => m.toUpperCase())
 }
 
+function slugify(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+}
+
 function formatPrice(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -98,7 +116,44 @@ type SortValue = "new" | "price_asc" | "price_desc"
 
 export default function CategoryPage({ params }: PageProps) {
   const { slug } = React.use(params)
-  const categoryTitle = titleFromSlug(slug)
+  const [category, setCategory] = React.useState<Category | null>(null)
+  const [categoryLoading, setCategoryLoading] = React.useState(false)
+  const [categoryError, setCategoryError] = React.useState<string | null>(null)
+
+  const categoryId = React.useMemo(() => {
+    const n = Number(slug)
+    return Number.isFinite(n) ? n : null
+  }, [slug])
+
+  React.useEffect(() => {
+    if (categoryId == null) return
+    let cancelled = false
+    ;(async () => {
+      setCategoryLoading(true)
+      setCategoryError(null)
+      try {
+        const res = await api.get<Category[]>("/categories")
+        const found = Array.isArray(res.data)
+          ? res.data.find((c) => c.id === categoryId) ?? null
+          : null
+        if (!cancelled) setCategory(found)
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setCategory(null)
+          setCategoryError(
+            e instanceof Error ? e.message : "Failed to load category"
+          )
+        }
+      } finally {
+        if (!cancelled) setCategoryLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [categoryId])
+
+  const categoryTitle = category?.name ?? titleFromSlug(slug)
   const [sort, setSort] = React.useState<SortValue>("new")
   const [wishlisted, setWishlisted] = React.useState<Record<string, boolean>>({})
 
@@ -112,15 +167,16 @@ export default function CategoryPage({ params }: PageProps) {
   }, [])
 
   const products = React.useMemo(() => {
+    const filterKey = category ? slugify(category.name) : slug
     const base =
-      slug === "new"
+      filterKey === "new"
         ? [...allProducts]
-        : allProducts.filter((p) => p.category === slug)
+        : allProducts.filter((p) => p.category === filterKey)
 
     if (sort === "price_asc") return [...base].sort((a, b) => a.price - b.price)
     if (sort === "price_desc") return [...base].sort((a, b) => b.price - a.price)
     return base
-  }, [slug, sort])
+  }, [category, slug, sort])
 
   return (
     <div className="py-8">
@@ -144,6 +200,16 @@ export default function CategoryPage({ params }: PageProps) {
               <p className="text-sm text-muted-foreground">
                 {products.length} products
               </p>
+              {categoryLoading ? (
+                <p className="mt-2 inline-flex items-center text-xs text-muted-foreground">
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Loading category details
+                </p>
+              ) : categoryError ? (
+                <p className="mt-2 text-xs text-destructive">{categoryError}</p>
+              ) : category?.description ? (
+                <p className="mt-2 text-sm text-muted-foreground">{category.description}</p>
+              ) : null}
             </div>
 
             <div className="flex items-center gap-2">
