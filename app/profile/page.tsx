@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { useLanguage } from "@/components/LanguageProvider"
 
 type ProfilePayload = {
   age?: number
@@ -60,6 +61,7 @@ function coerceNumberString(value: unknown): string {
 }
 
 export default function ProfilePage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
@@ -84,7 +86,7 @@ export default function ProfilePage() {
       const data = res.data as { user?: unknown; profile?: unknown } | undefined
       const raw = data?.profile ?? data?.user ?? res.data
       const profile = normalizeProfile(raw)
-      if (!profile) throw new Error("Invalid profile response")
+      if (!profile) throw new Error(t("common.error"))
 
       const rawName =
         coerceString(profile.name) ||
@@ -102,15 +104,15 @@ export default function ProfilePage() {
         localStorage.setItem("user_data", JSON.stringify(raw))
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load profile")
+      setError(e instanceof Error ? e.message : t("common.error"))
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [t])
 
   React.useEffect(() => {
     // Avoid hydration mismatch: don't read localStorage during render.
-    const hasToken = !!localStorage.getItem("auth_token")
+    const hasToken = typeof window !== "undefined" && !!localStorage.getItem("auth_token")
     setTokenAvailable(hasToken)
   }, [])
 
@@ -139,7 +141,7 @@ export default function ProfilePage() {
     if (ageTrimmed) {
       const parsedAge = Number(ageTrimmed)
       if (!Number.isFinite(parsedAge) || parsedAge < 0) {
-        setError("Age must be a valid number")
+        setError(t("profile.updateError"))
         setIsSaving(false)
         return
       }
@@ -148,10 +150,10 @@ export default function ProfilePage() {
 
     try {
       await api.post("/auth/update-profile", payload)
-      setSuccess("Profile updated")
+      setSuccess(t("profile.updateSuccess"))
       await fetchProfile()
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to update profile")
+      setError(e instanceof Error ? e.message : t("profile.updateError"))
     } finally {
       setIsSaving(false)
     }
@@ -162,10 +164,10 @@ export default function ProfilePage() {
       <div className="container mx-auto px-4 py-8 lg:px-8 max-w-7xl">
         <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-muted-foreground">
           <Link href="/" className="hover:text-primary transition-colors">
-            Home
+            {t("nav.home")}
           </Link>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground">Profile</span>
+          <span className="text-foreground">{t("nav.profile")}</span>
         </nav>
 
         <div className="rounded-lg border bg-card p-6 lg:p-8">
@@ -180,7 +182,7 @@ export default function ProfilePage() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <p className="text-base font-semibold truncate">{name || "Account"}</p>
+                    <p className="text-base font-semibold truncate">{name || t("nav.account")}</p>
                     <p className="text-xs text-muted-foreground truncate">{phone || " "}</p>
                   </div>
                 </div>
@@ -191,17 +193,17 @@ export default function ProfilePage() {
                     variant="outline"
                     onClick={() => router.push("/auth/login")}
                   >
-                    Login
+                    {t("auth.login")}
                   </Button>
                 ) : (
                   <Button asChild type="button" variant="outline">
-                    <Link href="/orders">Orders</Link>
+                    <Link href="/orders">{t("nav.orders")}</Link>
                   </Button>
                 )}
               </div>
 
               <div className="mt-4 text-sm text-muted-foreground">
-                Update your personal details and shipping address.
+                {t("footer.description")}
               </div>
             </aside>
 
@@ -210,16 +212,16 @@ export default function ProfilePage() {
                 <div className="rounded-lg border bg-background p-5">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <User className="h-4 w-4" />
-                    You are not logged in
+                    {t("profile.notLoggedIn")}
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Login to fetch your profile and update it.
+                    {t("profile.loginToFetch")}
                   </p>
                 </div>
               ) : isLoading ? (
                 <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading profile
+                  {t("common.loading")}
                 </div>
               ) : (
                 <form onSubmit={handleUpdate} className="space-y-5">
@@ -236,7 +238,7 @@ export default function ProfilePage() {
 
                 <FieldGroup className="gap-4">
                   <Field>
-                    <FieldLabel htmlFor="name">Name</FieldLabel>
+                    <FieldLabel htmlFor="name">{t("auth.fullName")}</FieldLabel>
                     <Input
                       id="name"
                       value={name}
@@ -247,7 +249,7 @@ export default function ProfilePage() {
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field>
-                      <FieldLabel htmlFor="age">Age</FieldLabel>
+                      <FieldLabel htmlFor="age">{t("profile.age")}</FieldLabel>
                       <Input
                         id="age"
                         inputMode="numeric"
@@ -259,7 +261,7 @@ export default function ProfilePage() {
                       />
                     </Field>
                     <Field>
-                      <FieldLabel htmlFor="gender">Gender</FieldLabel>
+                      <FieldLabel htmlFor="gender">{t("profile.gender")}</FieldLabel>
                       <select
                         id="gender"
                         name="gender"
@@ -267,16 +269,16 @@ export default function ProfilePage() {
                         value={gender}
                         onChange={(e) => setGender(e.target.value)}
                       >
-                        <option value="">Select gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
+                        <option value="">{t("profile.genderSelect")}</option>
+                        <option value="male">{t("profile.male")}</option>
+                        <option value="female">{t("profile.female")}</option>
                         <option value="other">Other</option>
                       </select>
                     </Field>
                   </div>
 
                   <Field>
-                    <FieldLabel htmlFor="avatar">Avatar URL</FieldLabel>
+                    <FieldLabel htmlFor="avatar">{t("profile.avatarUrl")}</FieldLabel>
                     <Input
                       id="avatar"
                       value={avatar}
@@ -284,12 +286,12 @@ export default function ProfilePage() {
                       placeholder="https://example.com/my-picture.png"
                     />
                     <FieldDescription>
-                      Paste an image URL to update your avatar.
+                      {t("profile.pasteUrl")}
                     </FieldDescription>
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="address">Address</FieldLabel>
+                    <FieldLabel htmlFor="address">{t("profile.address")}</FieldLabel>
                     <Textarea
                       id="address"
                       value={address}
@@ -299,7 +301,7 @@ export default function ProfilePage() {
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="phone">Phone</FieldLabel>
+                    <FieldLabel htmlFor="phone">{t("auth.phone")}</FieldLabel>
                     <Input id="phone" value={phone} readOnly />
                     <FieldDescription>Read-only from profile.</FieldDescription>
                   </Field>
@@ -312,18 +314,18 @@ export default function ProfilePage() {
                     onClick={() => void fetchProfile()}
                     disabled={isSaving}
                   >
-                    Refresh
+                    {t("profile.refresh")}
                   </Button>
                   <Button type="submit" disabled={isSaving}>
                     {isSaving ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving
+                        {t("profile.saving")}
                       </>
                     ) : (
                       <>
                         <Save className="mr-2 h-4 w-4" />
-                        Update Profile
+                        {t("profile.updateProfile")}
                       </>
                     )}
                   </Button>

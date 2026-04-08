@@ -1,4 +1,5 @@
 import api from "@/utils/axios"
+import { toast } from "sonner"
 
 export type FavouriteItem = {
   id: string
@@ -132,6 +133,7 @@ export function toggleFavourite(item: FavouriteItem) {
 
   const token = localStorage.getItem("auth_token")
   if (!token) {
+    toast.error("Please login to continue")
     window.location.href = "/auth/login"
     return inMemoryFavs
   }
@@ -143,12 +145,13 @@ export function toggleFavourite(item: FavouriteItem) {
     : [item, ...inMemoryFavs]
   
   setFavourites(next)
-
-  // Sync with server
+  
   if (exists) {
+    toast.success("Removed from favourites")
     api.delete(`/favorites/${item.id}`)
       .catch(err => console.error("Failed to remove favorite on server:", err))
   } else {
+    toast.success("Added to favourites")
     api.post("/favorites/add", { product_id: Number(item.id) })
       .catch(err => console.error("Failed to add favorite on server:", err))
   }
@@ -170,6 +173,7 @@ export function addToCart(item: Omit<CartItem, "qty">, qty = 1) {
 
   const token = localStorage.getItem("auth_token")
   if (!token) {
+    toast.error("Please login to continue")
     window.location.href = "/auth/login"
     return inMemoryCart
   }
@@ -182,6 +186,7 @@ export function addToCart(item: Omit<CartItem, "qty">, qty = 1) {
       : [{ ...item, qty }, ...current]
   
   setCart(next)
+  toast.success("Added to cart")
 
   // Sync with server
   api.post("/cart/add", { 
@@ -203,6 +208,12 @@ export function updateCartQty(id: string, qty: number, variant_id?: number) {
     .filter((x) => x.qty > 0)
   
   setCart(next)
+  
+  if (qty <= 0) {
+    toast.success("Removed from cart")
+  } else {
+    toast.success("Cart updated")
+  }
 
   if (item?.cart_id) {
     if (qty <= 0) {
@@ -223,6 +234,7 @@ export function removeFromCart(id: string, variant_id?: number) {
   const next = current.filter((x) => !(x.id === id && (variant_id ? x.variant_id === variant_id : true)))
   
   setCart(next)
+  toast.success("Removed from cart")
 
   if (item?.cart_id) {
     api.delete(`/cart/${item.cart_id}`)

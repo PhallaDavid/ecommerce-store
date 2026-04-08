@@ -17,6 +17,7 @@ import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
 import { formatPrice } from "@/lib/utils"
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
 import { Product, PaginatedResponse } from "@/types/api"
+import { useLanguage } from "@/components/LanguageProvider"
 
 type ProductCardProps = {
   id: string
@@ -40,6 +41,7 @@ function toNumber(value: unknown): number | null {
 
 
 export function NewCollection() {
+  const { t } = useLanguage()
   const [products, setProducts] = React.useState<ProductCardProps[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -89,7 +91,7 @@ export function NewCollection() {
       } catch (e: unknown) {
         if (cancelled) return
         setProducts([])
-        setError(e instanceof Error ? e.message : "Failed to load products")
+        setError(e instanceof Error ? e.message : t("common.error"))
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -97,7 +99,7 @@ export function NewCollection() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
 
   React.useEffect(() => {
     setFavs(Object.fromEntries(products.map((p) => [p.id, isFavourite(p.id)])))
@@ -110,12 +112,12 @@ export function NewCollection() {
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="text-base font-semibold tracking-tight">New Collections</h2>
+        <h2 className="text-base font-semibold tracking-tight">{t("home.newCollection")}</h2>
         <Link
           href="/?sort=new"
           className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors"
         >
-          Shop Now
+          {t("home.shopNow")}
         </Link>
       </div>
 

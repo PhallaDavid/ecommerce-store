@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Heart, ShoppingCart } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -48,10 +49,13 @@ export function ProductCard({
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border bg-card transition-all duration-300 hover:shadow-lg">
       <Link href={href} className={cn("relative block aspect-4/5 overflow-hidden", className)}>
-        <img
+        <Image
           src={image}
           alt={name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          fill
+          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          loading="lazy"
         />
         
         {/* Badges */}
@@ -73,6 +77,7 @@ export function ProductCard({
               "rounded-full bg-background/90 backdrop-blur-sm border shadow-sm transition-colors hover:bg-background",
               isFav && "text-primary border-primary/20"
             )}
+            aria-label={isFav ? "Remove from favourites" : "Add to favourites"}
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
@@ -91,6 +96,7 @@ export function ProductCard({
                 "rounded-full bg-background/90 backdrop-blur-sm border shadow-sm transition-colors hover:bg-background",
                 isAdded && "text-primary border-primary/20"
               )}
+              aria-label={isAdded ? "Added to cart" : "Add to cart"}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()

@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import api from "@/utils/axios"
 import { Banner, PaginatedResponse } from "@/types/api"
+import { cn } from "@/lib/utils"
 
 export function ImageBanners() {
   const [posters, setPosters] = React.useState<Banner[]>([])
@@ -65,11 +67,14 @@ export function ImageBanners() {
       {pairs.map((pair, idx) => (
         <div key={idx} className="flex w-full gap-4">
           {pair.map((poster) => (
-            <div key={poster.id} className={pair.length === 1 ? "w-full" : "w-1/2"}>
-              <img
+            <div key={poster.id} className={cn("relative overflow-hidden rounded-md", pair.length === 1 ? "w-full aspect-21/9" : "w-1/2 aspect-16/10")}>
+              <Image
                 src={poster.image}
-                alt={poster.title}
-                className="w-full h-full object-cover rounded-md"
+                alt={poster.title || "Promotion Banner"}
+                fill
+                priority={idx === 0}
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
               />
             </div>
           ))}

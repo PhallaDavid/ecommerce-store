@@ -33,6 +33,7 @@ import {
   subscribeStore,
   type CartItem,
 } from "@/lib/store"
+import { useLanguage } from "@/components/LanguageProvider"
 
 // Dynamic import — Leaflet cannot run on SSR
 const LocationPicker = dynamic(
@@ -44,10 +45,10 @@ const LocationPicker = dynamic(
 type LatLng = { lat: number; lng: number }
 type PayMethod = "card" | "khqr" | "aba" | "bank" | "cod"
 
-// ── Step indicator ─────────────────────────────────────────────────────────────
-const STEPS = ["Cart", "Delivery", "Payment", "Done"]
-
 function StepBar({ current }: { current: number }) {
+  const { t } = useLanguage()
+  const STEPS = [t("checkout.stepCart"), t("checkout.stepDelivery"), t("checkout.stepPayment"), t("checkout.stepDone")]
+  
   return (
     <div className="flex items-center w-full max-w-lg mx-auto">
       {STEPS.map((label, i) => (
@@ -130,6 +131,7 @@ function PayCard({ id, label, subtitle, icon, selected, onSelect }: {
 
 // ── KHQR mock QR code SVG ──────────────────────────────────────────────────────
 function KHQRDisplay({ amount }: { amount: number }) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border bg-white p-5">
       <div className="flex items-center gap-2">
@@ -154,7 +156,7 @@ function KHQRDisplay({ amount }: { amount: number }) {
         </div>
       </div>
       <div className="text-center">
-        <p className="text-xs text-muted-foreground">Scan with any Cambodian banking app</p>
+        <p className="text-xs text-muted-foreground">{t("checkout.scanBank")}</p>
         <p className="mt-1 text-base font-bold text-[#003087]">${amount.toFixed(2)} USD</p>
       </div>
       <div className="flex flex-wrap justify-center gap-2">
@@ -168,6 +170,7 @@ function KHQRDisplay({ amount }: { amount: number }) {
 
 // ── ABA Pay display ────────────────────────────────────────────────────────────
 function ABADisplay({ amount }: { amount: number }) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border bg-white p-5">
       <div className="flex items-center gap-2">
@@ -214,6 +217,7 @@ function BankTransferDisplay() {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
+  const { t } = useLanguage()
   const [step, setStep] = useState(0)
   const [items, setItems] = useState<CartItem[]>([])
   const [coupon, setCoupon] = useState("")
@@ -267,7 +271,7 @@ export default function CheckoutPage() {
   const PAY_METHODS: { id: PayMethod; label: string; subtitle: string; icon: React.ReactNode }[] = [
     { id: "khqr", label: "KHQR", subtitle: "ABA · ACLEDA · Wing · Bakong", icon: <QrCode className="h-5 w-5" /> },
     { id: "aba", label: "ABA Pay", subtitle: "Scan with ABA Mobile app", icon: <Smartphone className="h-5 w-5" /> },
-    { id: "card", label: "Credit / Debit Card", subtitle: "Visa, Mastercard, UnionPay", icon: <CreditCard className="h-5 w-5" /> },
+    { id: "card", label: t("checkout.paymentMethod"), subtitle: "Visa, Mastercard, UnionPay", icon: <CreditCard className="h-5 w-5" /> },
     { id: "bank", label: "Bank Transfer", subtitle: "ACLEDA, Canadia, etc.", icon: <Banknote className="h-5 w-5" /> },
     { id: "cod", label: "Cash on Delivery", subtitle: "Pay when you receive", icon: <Wallet className="h-5 w-5" /> },
   ]
@@ -280,9 +284,9 @@ export default function CheckoutPage() {
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
             <ShoppingBag className="h-7 w-7" />
           </div>
-          <p className="text-sm font-semibold">Your cart is empty</p>
-          <p className="mt-1 text-sm text-muted-foreground">Add some items first.</p>
-          <Button className="mt-5" asChild><Link href="/products">Browse Products</Link></Button>
+          <p className="text-sm font-semibold">{t("cart.empty")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("home.addBanners")}</p>
+          <Button className="mt-5" asChild><Link href="/products">{t("home.browseCategories")}</Link></Button>
         </div>
       ) : (
         items.map((it) => (
@@ -321,13 +325,13 @@ export default function CheckoutPage() {
       {items.length > 0 && (
         <div className="rounded-2xl border bg-card p-4 space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-            <Tag className="h-3.5 w-3.5" /> Coupon Code
+            <Tag className="h-3.5 w-3.5" /> {t("checkout.couponCode")}
           </p>
           <div className="flex gap-2">
             <input value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder="e.g. SAVE10"
               className="flex-1 rounded-md border bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all" />
             <Button type="button" variant={couponApplied ? "secondary" : "outline"} onClick={applyCoupon} disabled={couponApplied}>
-              {couponApplied ? "Applied ✓" : "Apply"}
+              {couponApplied ? t("checkout.applied") : t("checkout.apply")}
             </Button>
           </div>
           {couponApplied && <p className="text-xs text-primary font-medium">🎉 10% discount applied!</p>}
@@ -342,7 +346,7 @@ export default function CheckoutPage() {
       {/* Map location picker */}
       <div className="rounded-2xl border bg-card p-5 space-y-4">
         <p className="text-sm font-semibold flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-primary" /> Delivery Location
+          <MapPin className="h-4 w-4 text-primary" /> {t("checkout.deliveryAddress")}
           {!mapLocation && <span className="ml-auto text-[10px] text-destructive font-normal">Required *</span>}
         </p>
         <LocationPicker
@@ -359,7 +363,7 @@ export default function CheckoutPage() {
     <div className="space-y-5">
       <div className="rounded-2xl border bg-card p-5 space-y-3">
         <p className="text-sm font-semibold flex items-center gap-2">
-          <CreditCard className="h-4 w-4 text-primary" /> Choose Payment Method
+          <CreditCard className="h-4 w-4 text-primary" /> {t("checkout.paymentMethod")}
         </p>
         <div className="space-y-2">
           {PAY_METHODS.map((m) => (
@@ -416,9 +420,9 @@ export default function CheckoutPage() {
         </div>
       </div>
       <div>
-        <h2 className="text-2xl font-bold">Order Placed! 🎉</h2>
+        <h2 className="text-2xl font-bold">{t("checkout.orderPlaced")}</h2>
         <p className="mt-2 text-sm text-muted-foreground max-w-xs">
-          Thank you! Confirmation sent to <span className="font-medium text-foreground">{form.email || "your email"}</span>.
+          {t("checkout.thankYou")} <span className="font-medium text-foreground">{form.email || "your email"}</span>.
         </p>
       </div>
       <Badge variant="secondary" className="text-xs px-3 py-1.5 font-mono">{orderNum}</Badge>
@@ -429,14 +433,14 @@ export default function CheckoutPage() {
         </div>
       )}
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
-        <Button asChild><Link href="/products">Continue Shopping</Link></Button>
-        <Button variant="outline" asChild><Link href="/">Go Home</Link></Button>
+        <Button asChild><Link href="/products">{t("checkout.continueShopping")}</Link></Button>
+        <Button variant="outline" asChild><Link href="/">{t("checkout.goHome")}</Link></Button>
       </div>
     </div>
   )
 
   const stepContent = [CartStep, DeliveryStep, PaymentStep, ConfirmationStep]
-  const stepTitles = ["Review your cart", "Delivery details", "Payment", ""]
+  const stepTitles = [t("checkout.reviewCart"), t("checkout.deliveryDetails"), t("checkout.stepPayment"), ""]
 
   return (
     <div className="min-h-screen bg-background">
@@ -444,11 +448,11 @@ export default function CheckoutPage() {
 
         {/* Breadcrumb */}
         <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-muted-foreground">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+          <Link href="/" className="hover:text-primary transition-colors">{t("nav.home")}</Link>
           <ChevronRight className="h-4 w-4" />
-          <Link href="/products" className="hover:text-primary transition-colors">Products</Link>
+          <Link href="/products" className="hover:text-primary transition-colors">{t("nav.categories")}</Link>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground">Checkout</span>
+          <span className="text-foreground">{t("checkout.title")}</span>
         </nav>
 
         {/* Step bar */}
@@ -468,7 +472,7 @@ export default function CheckoutPage() {
             {/* Right: Order summary */}
             <div>
               <div className="rounded-2xl border bg-card p-5 space-y-4 sticky top-24">
-                <h2 className="text-sm font-bold uppercase tracking-wide">Order Summary</h2>
+                <h2 className="text-sm font-bold uppercase tracking-wide">{t("checkout.orderSummary")}</h2>
                 <Separator />
 
                 {/* Items compact */}
@@ -491,7 +495,7 @@ export default function CheckoutPage() {
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-muted-foreground">{t("checkout.subtotal")}</span>
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
                   {couponApplied && (
@@ -501,7 +505,7 @@ export default function CheckoutPage() {
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="text-muted-foreground">{t("checkout.shipping")}</span>
                     <span>{shipping === 0
                       ? <span className="text-primary font-medium">Free</span>
                       : `$${shipping.toFixed(2)}`}
@@ -512,7 +516,7 @@ export default function CheckoutPage() {
                 <Separator />
 
                 <div className="flex justify-between text-base font-bold">
-                  <span>Total</span>
+                  <span>{t("checkout.total")}</span>
                   <span className="text-primary">${total.toFixed(2)}</span>
                 </div>
 
@@ -533,7 +537,7 @@ export default function CheckoutPage() {
                 {/* CTA */}
                 {step < 2 ? (
                   <Button className="w-full" size="lg" disabled={!canProceed} onClick={() => setStep((s) => s + 1)}>
-                    {step === 0 ? "Continue to Delivery" : "Continue to Payment"}
+                    {step === 0 ? t("checkout.continueToDelivery") : t("checkout.continueToPayment")}
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 ) : (
@@ -544,10 +548,10 @@ export default function CheckoutPage() {
                     {placing ? (
                       <span className="flex items-center gap-2">
                         <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        Placing Order…
+                        {t("checkout.placingOrder")}
                       </span>
                     ) : (
-                      <><Lock className="mr-2 h-4 w-4" />Place Order · ${total.toFixed(2)}</>
+                      <><Lock className="mr-2 h-4 w-4" />{t("checkout.placeOrder")} · ${total.toFixed(2)}</>
                     )}
                   </Button>
                 )}
@@ -555,13 +559,13 @@ export default function CheckoutPage() {
                 {step > 0 && (
                   <button type="button" onClick={() => setStep((s) => s - 1)}
                     className="w-full text-center text-xs text-muted-foreground hover:text-primary transition-colors">
-                    ← Back
+                    ← {t("checkout.back")}
                   </button>
                 )}
 
                 {/* Trust badges */}
                 <div className="grid grid-cols-3 gap-2 pt-1 border-t">
-                  {[{ icon: Truck, label: "Fast Delivery" }, { icon: ShieldCheck, label: "Secure Pay" }, { icon: Lock, label: "Encrypted" }].map(({ icon: Icon, label }) => (
+                  {[{ icon: Truck, label: t("checkout.fastDelivery") }, { icon: ShieldCheck, label: t("checkout.securePay") }, { icon: Lock, label: t("checkout.encrypted") }].map(({ icon: Icon, label }) => (
                     <div key={label} className="flex flex-col items-center gap-1 text-center pt-2">
                       <Icon className="h-4 w-4 text-muted-foreground" />
                       <span className="text-[9px] font-medium uppercase text-muted-foreground">{label}</span>

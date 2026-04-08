@@ -121,9 +121,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
+  /* Smooth theme transitions targeted at the body and key containers */
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-[background-color,border-color,color] duration-300 ease-in-out;
   }
+  
   html {
     @apply font-sans;
   }

@@ -1,22 +1,15 @@
+"use client"
+
 import Link from "next/link"
-import {
-  CreditCard,
-  Wallet,
-  ShieldCheck,
-} from "lucide-react"
+import Image from "next/image"
 import {
   GitHubLogoIcon,
   InstagramLogoIcon,
   LinkedInLogoIcon,
   TwitterLogoIcon,
 } from "@radix-ui/react-icons"
-
 import { Separator } from "@/components/ui/separator"
-
-const quickLinks = [
-  { label: "Home", href: "/" },
-  { label: "Contact", href: "/contact" },
-]
+import { useLanguage } from "@/components/LanguageProvider"
 
 const socialLinks = [
   { label: "Instagram", href: "https://instagram.com", icon: InstagramLogoIcon },
@@ -25,15 +18,14 @@ const socialLinks = [
   { label: "GitHub", href: "https://github.com", icon: GitHubLogoIcon },
 ]
 
-// const paymentMethods = [
-//   { label: "Visa", icon: CreditCard },
-//   { label: "Mastercard", icon: CreditCard },
-//   { label: "PayPal", icon: Wallet },
-//   { label: "Apple Pay", icon: Wallet },
-// ]
-
 export function Footer() {
+  const { t } = useLanguage()
   const year = new Date().getFullYear()
+
+  const quickLinks = [
+    { label: t("nav.home"), href: "/" },
+    { label: t("nav.contact"), href: "/contact" },
+  ]
 
   return (
     <footer className="border-t bg-background">
@@ -42,17 +34,17 @@ export function Footer() {
           <div className="space-y-3 md:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2">
              <div className="flex items-center flex-row" >
-              <span className=" text-xl font-bold">R </span>
-              <p className="text-sm font-medium" >4kie.S</p>
-              </div>
+               <span className=" text-xl font-bold">R </span>
+               <p className="text-sm font-medium" >4kie.S</p>
+               </div>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Modern essentials, fast delivery, and secure checkout — built for everyday shopping.
+              {t("footer.description")}
             </p>
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Quick Links</h3>
+            <h3 className="text-sm font-semibold">{t("footer.quickLinks")}</h3>
             <ul className="space-y-2 text-sm">
               {quickLinks.map((item) => (
                 <li key={item.href}>
@@ -68,7 +60,7 @@ export function Footer() {
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Social</h3>
+            <h3 className="text-sm font-semibold">{t("footer.social")}</h3>
             <ul className="flex flex-wrap gap-2">
               {socialLinks.map(({ label, href, icon: Icon }) => (
                 <li key={label}>
@@ -80,7 +72,6 @@ export function Footer() {
                     aria-label={label}
                   >
                     <Icon className="h-4 w-4" />
-                    {/* <span className="truncate">{label}</span> */}
                   </a>
                 </li>
               ))}
@@ -88,8 +79,15 @@ export function Footer() {
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Payment Methods</h3>
-          <img src="/images/we-accept-payment–for-web-footer – v2.png" alt="" />
+            <h3 className="text-sm font-semibold">{t("footer.paymentMethods")}</h3>
+            <div className="relative h-10 w-full max-w-[280px]">
+              <Image 
+                src="/images/we-accept-payment–for-web-footer – v2.png" 
+                alt="Supported Payment Methods (ABA, WING, ACLEDA, PayPal, Tether)" 
+                fill
+                className="object-contain object-left"
+              />
+            </div>
           </div>
         </div>
 
@@ -97,7 +95,7 @@ export function Footer() {
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            © {year} Phalla David. All rights reserved.
+            © {year} Phalla David. {t("footer.allRightsReserved")}
           </p>
         </div>
       </div>

@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { useLanguage } from "@/components/LanguageProvider"
 
 export default function RegisterPage() {
+  const { t } = useLanguage()
   const router = useRouter()
   const [showPassword, setShowPassword] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
@@ -59,13 +61,13 @@ export default function RegisterPage() {
             <UserPlus className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold">Account Created!</h1>
+            <h1 className="text-2xl font-bold">{t("auth.createAccount")}!</h1>
             <p className="text-muted-foreground">
-              Your account has been successfully created. Redirecting to login page...
+              {t("auth.accountCreated")}
             </p>
           </div>
           <Button asChild className="w-full h-11">
-            <Link href="/auth/login">Continue to Login</Link>
+            <Link href="/auth/login">{t("auth.continueToLogin")}</Link>
           </Button>
         </div>
       </div>
@@ -79,7 +81,7 @@ export default function RegisterPage() {
         className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Home
+        {t("common.backToHome")}
       </Link>
 
       <div className="w-full max-w-sm">
@@ -93,11 +95,11 @@ export default function RegisterPage() {
                       <GalleryVerticalEndIcon className="size-6" />
                     </div>
                   </Link>
-                  <h1 className="text-2xl font-bold tracking-tight mt-2">Create an account</h1>
+                  <h1 className="text-2xl font-bold tracking-tight mt-2">{t("auth.createAccount")}</h1>
                   <FieldDescription>
-                    Already have an account?{" "}
+                    {t("auth.hasAccount")}{" "}
                     <Link href="/auth/login" className="font-semibold text-primary hover:underline">
-                      Log in
+                      {t("auth.signIn")}
                     </Link>
                   </FieldDescription>
                 </div>
@@ -110,7 +112,7 @@ export default function RegisterPage() {
 
                 <div className="grid gap-4">
                   <Field>
-                    <FieldLabel htmlFor="name">Full Name</FieldLabel>
+                    <FieldLabel htmlFor="name">{t("auth.fullName")}</FieldLabel>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <UserPlus className="h-4 w-4" />
@@ -128,7 +130,7 @@ export default function RegisterPage() {
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
+                    <FieldLabel htmlFor="phone">{t("auth.phone")}</FieldLabel>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Smartphone className="h-4 w-4" />
@@ -146,7 +148,7 @@ export default function RegisterPage() {
                   </Field>
 
                   <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Lock className="h-4 w-4" />
@@ -172,22 +174,22 @@ export default function RegisterPage() {
                         )}
                       </button>
                     </div>
-                    <FieldDescription>Minimum 8 characters.</FieldDescription>
+                    <FieldDescription>{t("auth.minCharacters")}</FieldDescription>
                   </Field>
 
                   <Button type="submit" className="w-full h-11 text-base mt-2" disabled={isLoading}>
                     {isLoading ? (
                       <div className="flex items-center justify-center gap-2">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        <span>Creating account...</span>
+                        <span>{t("common.loading")}</span>
                       </div>
                     ) : (
-                      "Create Account"
+                      t("auth.register")
                     )}
                   </Button>
                 </div>
 
-                <FieldSeparator>Or sign up with</FieldSeparator>
+                <FieldSeparator>{t("auth.continueWith")}</FieldSeparator>
 
                 <div className="grid gap-4">
                   <Button variant="outline" type="button" className="h-11 w-full">
@@ -197,15 +199,15 @@ export default function RegisterPage() {
                         fill="currentColor"
                       />
                     </svg>
-                    Continue with Google
+                    {t("auth.google")}
                   </Button>
                 </div>
               </FieldGroup>
             </form>
           </div>
           <FieldDescription className="text-center px-4">
-            By clicking continue, you agree to our <Link href="#" className="underline">Terms of Service</Link>{" "}
-            and <Link href="#" className="underline">Privacy Policy</Link>.
+            {t("auth.byClicking")} <Link href="#" className="underline">{t("auth.terms")}</Link>{" "}
+            {t("auth.privacy")}.
           </FieldDescription>
         </div>
       </div>

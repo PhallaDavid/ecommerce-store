@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import {
   Carousel,
   CarouselContent,
@@ -11,8 +12,10 @@ import {
 } from "@/components/ui/carousel"
 import api from "@/utils/axios"
 import { Brand, PaginatedResponse } from "@/types/api"
+import { useLanguage } from "@/components/LanguageProvider"
 
 export function TopBrands() {
+  const { t } = useLanguage()
   const [brands, setBrands] = React.useState<Brand[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -34,7 +37,7 @@ export function TopBrands() {
       } catch (e: unknown) {
         if (cancelled) return
         setBrands([])
-        setError(e instanceof Error ? e.message : "Failed to load brands")
+        setError(e instanceof Error ? e.message : t("common.error"))
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -42,19 +45,19 @@ export function TopBrands() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
 
   if (!isLoading && brands.length === 0) return null
 
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="text-base font-semibold tracking-tight">Top Brands</h2>
+        <h2 className="text-base font-semibold tracking-tight">{t("home.topBrands")}</h2>
         <Link
           href="/brands"
           className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors"
         >
-          See All
+          {t("home.seeAll")}
         </Link>
       </div>
 
@@ -93,11 +96,15 @@ export function TopBrands() {
                   >
                     <div className="flex w-full aspect-square items-center justify-center rounded-md bg-muted overflow-hidden border">
                       {brand.avatar ? (
-                        <img
-                          src={brand.avatar}
-                          alt={brand.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                        <div className="relative w-full h-full">
+                          <Image
+                            src={brand.avatar}
+                            alt={brand.name}
+                            fill
+                            sizes="(max-width: 768px) 33vw, 100px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
                       ) : (
                         <div className="text-xl font-bold text-muted-foreground">
                           {brand.name.slice(0, 1).toUpperCase()}

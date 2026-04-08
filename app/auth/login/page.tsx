@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { useLanguage } from "@/components/LanguageProvider"
 
 function LoginFormContent() {
+  const { t } = useLanguage()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = React.useState(false)
@@ -76,7 +78,7 @@ function LoginFormContent() {
         className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Home
+        {t("common.backToHome")}
       </Link>
 
       <div className="w-full max-w-sm">
@@ -90,11 +92,11 @@ function LoginFormContent() {
                       <GalleryVerticalEndIcon className="size-6" />
                     </div>
                   </Link>
-                  <h1 className="text-2xl font-bold tracking-tight mt-2">Welcome back</h1>
+                  <h1 className="text-2xl font-bold tracking-tight mt-2">{t("auth.welcomeBack")}</h1>
                   <FieldDescription>
-                    Don't have an account?{" "}
+                    {t("auth.noAccount")}{" "}
                     <Link href="/auth/register" className="font-semibold text-primary hover:underline">
-                      Sign up
+                      {t("auth.signUp")}
                     </Link>
                   </FieldDescription>
                 </div>
@@ -107,7 +109,7 @@ function LoginFormContent() {
 
                 <div className="grid gap-4">
                   <Field>
-                    <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
+                    <FieldLabel htmlFor="phone">{t("auth.phone")}</FieldLabel>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <Smartphone className="h-4 w-4" />
@@ -126,9 +128,9 @@ function LoginFormContent() {
 
                   <Field>
                     <div className="flex items-center justify-between">
-                      <FieldLabel htmlFor="password">Password</FieldLabel>
+                      <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
                       <Link href="#" className="text-xs font-medium text-primary hover:underline">
-                        Forgot password?
+                        {t("auth.forgotPassword")}
                       </Link>
                     </div>
                     <div className="relative">
@@ -162,15 +164,15 @@ function LoginFormContent() {
                     {isLoading ? (
                       <div className="flex items-center justify-center gap-2">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        <span>Logging in...</span>
+                        <span>{t("common.loading")}</span>
                       </div>
                     ) : (
-                      "Login"
+                      t("auth.login")
                     )}
                   </Button>
                 </div>
 
-                <FieldSeparator>Or continue with</FieldSeparator>
+                <FieldSeparator>{t("auth.continueWith")}</FieldSeparator>
 
                 <div className="grid gap-4">
                   <Button variant="outline" type="button" className="h-11 w-full">
@@ -187,8 +189,8 @@ function LoginFormContent() {
             </form>
           </div>
           <FieldDescription className="text-center px-4">
-            By clicking continue, you agree to our <Link href="#" className="underline">Terms of Service</Link>{" "}
-            and <Link href="#" className="underline">Privacy Policy</Link>.
+            {t("auth.byClicking")} <Link href="#" className="underline">{t("auth.terms")}</Link>{" "}
+            {t("auth.privacy")}.
           </FieldDescription>
         </div>
       </div>

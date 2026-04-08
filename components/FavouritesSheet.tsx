@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { ShoppingBag, ShoppingCart } from "lucide-react"
 
 import { SideSheet } from "@/components/SideSheet"
@@ -49,9 +50,11 @@ export function FavouritesSheet({ open, onOpenChange }: FavouritesSheetProps) {
                 className="shrink-0"
                 onClick={() => onOpenChange(false)}
               >
-                <img
+                <Image
                   src={it.image}
                   alt={it.name}
+                  width={64}
+                  height={64}
                   className="h-16 w-16 rounded-xl object-cover bg-muted"
                 />
               </Link>

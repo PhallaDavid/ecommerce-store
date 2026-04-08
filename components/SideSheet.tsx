@@ -50,13 +50,13 @@ export function SideSheet({ open, onOpenChange, title, children }: SideSheetProp
         aria-label={title}
         className={cn(
           "absolute right-0 top-0 h-full w-full sm:w-[420px]",
-          "border-l bg-background ",
+          "border-l bg-background flex flex-col",
           "transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="text-sm font-semibold">{title}</div>
+        <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
+          <div className="text-sm font-semibold text-foreground">{title}</div>
           <Button
             type="button"
             variant="ghost"
@@ -69,7 +69,7 @@ export function SideSheet({ open, onOpenChange, title, children }: SideSheetProp
           </Button>
         </div>
 
-        <div className="h-[calc(100%-52px)] overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4">
           {children}
         </div>
       </aside>

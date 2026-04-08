@@ -18,6 +18,8 @@ import api from "@/utils/axios";
 import { useState, useEffect, useRef } from "react";
 import { Category, Banner, PaginatedResponse } from "@/types/api";
 
+import { useLanguage } from "@/components/LanguageProvider";
+
 function useCarouselDots(slidesLength: number) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -42,6 +44,7 @@ function useCarouselDots(slidesLength: number) {
 }
 
 export default function Home() {
+  const { t } = useLanguage();
   const [banners, setBanners] = useState<Banner[]>([]);
   const [bannersLoading, setBannersLoading] = useState(true);
   const [bannersError, setBannersError] = useState<string | null>(null);
@@ -66,7 +69,7 @@ export default function Home() {
       } catch (e: unknown) {
         if (cancelled) return;
         setBanners([]);
-        setBannersError(e instanceof Error ? e.message : "Failed to load banners");
+        setBannersError(e instanceof Error ? e.message : t("common.error"));
       } finally {
         if (!cancelled) setBannersLoading(false);
       }
@@ -74,7 +77,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +97,7 @@ export default function Home() {
       } catch (e: unknown) {
         if (cancelled) return;
         setTopCategories([]);
-        setCategoriesError(e instanceof Error ? e.message : "Failed to load categories");
+        setCategoriesError(e instanceof Error ? e.message : t("common.error"));
       } finally {
         if (!cancelled) setCategoriesLoading(false);
       }
@@ -102,7 +105,10 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
+
+  // Pause auto-slide on hover
+  const [isHovered, setIsHovered] = useState(false);
 
   // Auto-slide functionality
   useEffect(() => {
@@ -115,10 +121,7 @@ export default function Home() {
     }, 4000); // Change slide every 4 seconds
 
     return () => clearInterval(interval);
-  }, [activeIndex, slidesLength, isTransitioning, scrollToSlide]);
-
-  // Pause auto-slide on hover
-  const [isHovered, setIsHovered] = useState(false);
+  }, [activeIndex, slidesLength, isTransitioning, scrollToSlide, isHovered]);
 
   return (
     <div className="py-6">
@@ -153,10 +156,10 @@ export default function Home() {
                         <div className="relative z-10 h-full flex items-center justify-center p-6">
                           <div className="text-center">
                             <div className="text-lg font-semibold text-foreground">
-                              No banners
+                              {t("home.noBanners")}
                             </div>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              Add active banners to show here.
+                              {t("home.addBanners")}
                             </p>
                           </div>
                         </div>
@@ -187,7 +190,7 @@ export default function Home() {
                               className="mt-3 bg-primary text-white hover:bg-primary-50/90 transition-transform hover:scale-105 animate-in slide-in-from-bottom-4 duration-700 delay-200"
                               size="lg"
                             >
-                              Shop Now
+                              {t("home.shopNow")}
                             </Button>
                           </div>
                         </div>
@@ -232,12 +235,12 @@ export default function Home() {
         {/* Top categories (4 visible, swipe for more) */}
 	        <section className="space-y-3">
 	          <div className="flex items-end justify-between">
-	            <h2 className="text-base font-semibold tracking-tight">Top Categories</h2>
+	            <h2 className="text-base font-semibold tracking-tight">{t("home.topCategories")}</h2>
 	            <Link
 	              href="/categories"
 	              className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors"
 	            >
-	              See All
+	              {t("home.seeAll")}
 	            </Link>
 		          </div>
 

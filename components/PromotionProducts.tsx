@@ -13,6 +13,7 @@ import api from "@/utils/axios"
 import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
 import { Product, PaginatedResponse } from "@/types/api"
+import { useLanguage } from "@/components/LanguageProvider"
 
 type ProductCardProps = {
   id: string
@@ -35,6 +36,7 @@ function toNumber(value: unknown): number | null {
 }
 
 export function PromotionProducts() {
+  const { t } = useLanguage()
   const [products, setProducts] = React.useState<ProductCardProps[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -82,7 +84,7 @@ export function PromotionProducts() {
       } catch (e: unknown) {
         if (cancelled) return
         setProducts([])
-        setError(e instanceof Error ? e.message : "Failed to load promotions")
+        setError(e instanceof Error ? e.message : t("common.error"))
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -90,7 +92,7 @@ export function PromotionProducts() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
 
   React.useEffect(() => {
     setFavs(Object.fromEntries(products.map((p) => [p.id, isFavourite(p.id)])))
@@ -105,12 +107,12 @@ export function PromotionProducts() {
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="text-base font-semibold tracking-tight text-red-600">Flash Sale</h2>
+        <h2 className="text-base font-semibold tracking-tight text-red-600">{t("home.flashSale")}</h2>
         <Link
           href="/products"
           className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors"
         >
-          View All
+          {t("home.seeAll")}
         </Link>
       </div>
 

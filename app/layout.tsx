@@ -8,7 +8,6 @@ import { Footer } from "@/components/Footer";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import TopLoader from "@/components/TopLoader"
 import { PromoPopup } from "@/components/PromoPopup";
-import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -47,6 +46,9 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "@/components/ui/sonner"
+import { LanguageProvider } from "@/components/LanguageProvider"
+
+import { ThemeProvider } from "@/components/ThemeProvider"
 
 export default function RootLayout({
   children,
@@ -56,17 +58,21 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, katumruyPro.variable, "font-sans", inter.variable)}
     >
-      <body className="min-h-full flex flex-col pb-[60px] lg:pb-0">
-        <TopLoader />
-        <PromoPopup />
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <MobileBottomNav />
-        <ScrollToTop />
-        <Toaster position="bottom-center" richColors />
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <LanguageProvider>
+            <TopLoader />
+            <PromoPopup />
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <ScrollToTop />
+            <Toaster position="bottom-center" richColors />
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

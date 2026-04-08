@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import Image from "next/image"
 import { X } from "lucide-react"
 import api from "@/utils/axios"
 
@@ -104,7 +105,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 flex-1 max-w-6xl">
             <div className="relative flex-1">
-              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <Input
@@ -207,11 +208,13 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
                         className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
                         onClick={onClose}
                       >
-                        <div className="aspect-square bg-muted rounded mb-3 overflow-hidden">
-                          <img
+                        <div className="relative aspect-square bg-muted rounded mb-3 overflow-hidden">
+                          <Image
                             src={p.thumbnail || FALLBACK_IMG}
                             alt={p.name}
-                            className="h-full w-full object-cover"
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className="object-cover"
                           />
                         </div>
                         <h3 className="font-medium line-clamp-1">{p.name}</h3>

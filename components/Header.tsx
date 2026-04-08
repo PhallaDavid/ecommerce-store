@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import NextImage from "next/image"
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -19,6 +20,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,6 +36,7 @@ import { FavouritesSheet } from "@/components/FavouritesSheet"
 import { getCart, getFavourites, subscribeStore, syncFavoritesWithServer, syncCartWithServer } from "@/lib/store"
 import api from "@/utils/axios"
 import { Category, Brand, PaginatedResponse } from "@/types/api"
+import { useLanguage, Language } from "@/components/LanguageProvider"
 import {
   Heart,
   ShoppingCart,
@@ -40,8 +49,10 @@ import {
   Settings,
   Package,
   ChevronDown,
-  ChevronRight,
+  Sun,
+  Moon,
 } from "lucide-react"
+import { useTheme } from "next-themes"
 
 // Flag SVG components
 const USFlag = () => (
@@ -207,13 +218,12 @@ function MobileNavLink({
   )
 }
 
-const STORE_EVENT = "STORE_UPDATE"
-
 export function Header() {
   const router = useRouter()
+  const { language, setLanguage, t } = useLanguage()
+  const { setTheme, theme, resolvedTheme } = useTheme()
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
-  const [language, setLanguage] = React.useState("en")
   const [location, setLocation] = React.useState("")
   const [isSearchDialogOpen, setIsSearchDialogOpen] = React.useState(false)
   const [isFavouritesOpen, setIsFavouritesOpen] = React.useState(false)
@@ -235,104 +245,51 @@ export function Header() {
     setMobileMenuOpen(false)
   }, [])
 
-  // Load categories for navigation menus
+  // Load initial data (Categories, Brands, Profile) in parallel for performance
   React.useEffect(() => {
     let cancelled = false
-    ;(async () => {
+    const token = localStorage.getItem("auth_token")
+
+    const fetchData = async () => {
       setCategoriesLoading(true)
-      setCategoriesError(null)
-      try {
-        const res = await api.get<PaginatedResponse<Category>>("/categories")
-        if (cancelled) return
-        
-        const data = res.data && "data" in res.data 
-          ? res.data.data 
-          : (Array.isArray(res.data) ? res.data : [])
-          
-        setCategories(data)
-      } catch (e: unknown) {
-        if (cancelled) return
-        setCategories([])
-        setCategoriesError(
-          e instanceof Error ? e.message : "Failed to load categories"
-        )
-      } finally {
-        if (!cancelled) setCategoriesLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  // Load brands for navigation menus
-  React.useEffect(() => {
-    let cancelled = false
-    ;(async () => {
       setBrandsLoading(true)
-      setBrandsError(null)
-      try {
-        const res = await api.get<PaginatedResponse<Brand>>("/brands")
-        if (cancelled) return
-        
-        const data = res.data && "data" in res.data 
-          ? res.data.data 
-          : (Array.isArray(res.data) ? res.data : [])
-          
+      
+      const promises: Promise<any>[] = [
+        api.get<PaginatedResponse<Category>>("/categories"),
+        api.get<PaginatedResponse<Brand>>("/brands")
+      ]
+
+      if (token) {
+        promises.push(api.get("/auth/profile"))
+      }
+
+      const results = await Promise.allSettled(promises)
+      if (cancelled) return
+
+      // Handle Categories
+      if (results[0].status === "fulfilled") {
+        const res = results[0].value
+        const data = res.data && "data" in res.data ? res.data.data : (Array.isArray(res.data) ? res.data : [])
+        setCategories(data)
+      } else {
+        setCategoriesError("Failed to load categories")
+      }
+      setCategoriesLoading(false)
+
+      // Handle Brands
+      if (results[1].status === "fulfilled") {
+        const res = results[1].value
+        const data = res.data && "data" in res.data ? res.data.data : (Array.isArray(res.data) ? res.data : [])
         setBrands(data)
-      } catch (e: unknown) {
-        if (cancelled) return
-        setBrands([])
-        setBrandsError(e instanceof Error ? e.message : "Failed to load brands")
-      } finally {
-        if (!cancelled) setBrandsLoading(false)
+      } else {
+        setBrandsError("Failed to load brands")
       }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+      setBrandsLoading(false)
 
-  React.useEffect(() => {
-    if (!mounted) return
-    const refresh = () => {
-      setFavCount(getFavourites().length)
-      setCartCount(getCart().reduce((sum, it) => sum + it.qty, 0))
-    }
-    refresh()
-    return subscribeStore(refresh)
-  }, [mounted])
-
-  // Check localStorage for user & token on mount
-  React.useEffect(() => {
-    const token = localStorage.getItem("auth_token")
-    const userRaw = localStorage.getItem("user_data")
-    if (token && userRaw) {
-      try {
-        const user = normalizeAuthUser(JSON.parse(userRaw))
-        setAuthUser(user)
-        syncFavoritesWithServer()
-        syncCartWithServer()
-
-        // Auto-heal session for middleware: set cookie if missing
-        if (!document.cookie.includes("auth_token=")) {
-          document.cookie = `auth_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
-        }
-      } catch {
-        setAuthUser(null)
-      }
-    }
-  }, [])
-
-  // Refresh profile from API (keeps header up-to-date after update-profile)
-  React.useEffect(() => {
-    const token = localStorage.getItem("auth_token")
-    if (!token) return
-
-    ;(async () => {
-      try {
-        const profileRes = await api.get("/auth/profile")
-        const rawProfile = profileRes.data?.profile ?? profileRes.data?.user ?? profileRes.data
+      // Handle Profile
+      if (token && results[2]?.status === "fulfilled") {
+        const res = results[2].value
+        const rawProfile = res.data?.profile ?? res.data?.user ?? res.data
         const user = normalizeAuthUser(rawProfile)
         if (user) {
           localStorage.setItem("user_data", JSON.stringify(rawProfile))
@@ -340,10 +297,11 @@ export function Header() {
           syncFavoritesWithServer()
           syncCartWithServer()
         }
-      } catch {
-        // Ignore network/auth errors; header will fall back to localStorage.
       }
-    })()
+    }
+
+    fetchData()
+    return () => { cancelled = true }
   }, [])
 
   const handleLogout = () => {
@@ -381,10 +339,6 @@ export function Header() {
     }
   }, [])
 
-  const toggleLanguage = () => {
-    setLanguage((prev) => (prev === "en" ? "kh" : "en"))
-  }
-
   const closeSidebar = () => setMobileMenuOpen(false)
   const navCategories = React.useMemo(() => categories.slice(0, 12), [categories])
   const navBrands = React.useMemo(() => brands.slice(0, 8), [brands])
@@ -392,21 +346,33 @@ export function Header() {
   return (
     <>
       {/* Language and Location Bar */}
-      <div className="bg-black text-white text-xs h-8 flex items-center">
+      <div className="bg-background text-white text-xs h-9 flex items-center">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-8 text-sm">
+          <div className="flex items-center justify-between h-9 text-sm">
             <div className="flex items-center space-x-4">
-              <button
-                onClick={toggleLanguage}
-                className="flex items-center space-x-2 hover:text-gray-100 text-white transition-colors"
-              >
-                {language === "en" ? <USFlag /> : <CambodiaFlag />}
-                <span className="truncate">{language === "en" ? "English" : "ខ្មែរ (Khmer)"}</span>
-              </button>
+              <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                <SelectTrigger className="w-[120px] h-7 bg-transparent hover:bg-transparent data-[state=open]:bg-transparent border-none text-white shadow-none focus:ring-0 focus:ring-offset-0 px-0 font-bold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">
+                    <div className="flex items-center gap-2">
+                      <USFlag />
+                      <span>English</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="kh">
+                    <div className="flex items-center gap-2">
+                      <CambodiaFlag />
+                      <span>ខ្មែរ (Khmer)</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center space-x-2 text-white">
+            <div className="flex items-center space-x-2 text-white/90">
               <MapPin className="h-4 w-4" />
-              <span className="truncate w-[200px]">{location}</span>
+              <span className="truncate w-[200px] text-xs font-medium">{location}</span>
             </div>
           </div>
         </div>
@@ -434,8 +400,8 @@ export function Header() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search ..."
-                  className="pl-10 pr-4 py-2 w-full rounded-full cursor-pointer"
+                  placeholder={t("nav.search")}
+                  className="pl-10 pr-4 py-2 w-full rounded-md cursor-pointer h-10 border-muted-foreground/20 focus-visible:ring-primary"
                   onClick={() => setIsSearchDialogOpen(true)}
                   readOnly
                 />
@@ -452,6 +418,17 @@ export function Header() {
                 onClick={() => setIsSearchDialogOpen(true)}
               >
                 <Search className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full relative"
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+              >
+                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
               </Button>
 
               <Button
@@ -484,61 +461,69 @@ export function Header() {
                 ) : null}
               </Button>
 
-              {/* Desktop: Avatar dropdown if logged in, else User icon */}
-	              <div className="hidden md:flex items-center gap-2">
-		                {authUser ? (
-		                  <DropdownMenu>
-		                    <DropdownMenuTrigger asChild>
-		                      <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-		                        <Avatar className="h-8 w-8 cursor-pointer">
-		                          <AvatarImage src={authUser.avatar} alt={authUser.name ?? "User"} />
-		                          <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
-		                            {getInitials(authUser.name)}
-		                          </AvatarFallback>
-		                        </Avatar>
-                            <span className="max-w-[140px] text-sm font-medium truncate">
-                              {authUser.name ?? "Account"}
-                            </span>
-		                      </button>
-	                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-52">
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => router.push("/profile")}>
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
+              {/* User Avatar dropdown (Desktop & Mobile - Only if logged in) */}
+              {authUser && (
+                <div className="flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center gap-2 rounded-xl focus:outline-none transition-all hover:bg-muted/50 p-1 group">
+                        <div className="relative">
+                          <Avatar className="h-8 w-8 transition-transform group-hover:scale-105 border-2 border-transparent group-hover:border-primary/20">
+                            <AvatarImage src={authUser.avatar} alt={authUser.name ?? "User"} />
+                            <AvatarFallback className="text-xs font-bold bg-primary text-primary-foreground">
+                              {getInitials(authUser.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500" />
+                        </div>
+                        <span className="hidden lg:block max-w-[120px] text-sm font-semibold truncate">
+                          {authUser.name}
+                        </span>
+                        <ChevronDown className="hidden lg:block h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    
+                    <DropdownMenuContent align="end" className="w-64 p-2 shadow-xl border-muted/50">
+                      <div className="flex items-center gap-3 p-3 mb-1 bg-muted/30 rounded-lg">
+                        <Avatar className="h-10 w-10 border shadow-sm">
+                          <AvatarImage src={authUser.avatar} />
+                          <AvatarFallback className="font-bold bg-primary text-primary-foreground">
+                            {getInitials(authUser.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-bold truncate">{authUser.name}</span>
+                          <span className="text-[10px] text-muted-foreground truncate uppercase tracking-tighter">
+                            {authUser.email || authUser.phone}
+                          </span>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator className="mx-1" />
+                      <DropdownMenuItem onClick={() => router.push("/profile")} className="cursor-pointer rounded-md">
+                        <User className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{t("nav.profile")}</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push("/orders")}>
-                        <Package className="mr-2 h-4 w-4" />
-                        My Orders
+                      <DropdownMenuItem onClick={() => router.push("/orders")} className="cursor-pointer rounded-md">
+                        <Package className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{t("nav.orders")}</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => router.push("/settings")}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
+                      <DropdownMenuItem onClick={() => router.push("/settings")} className="cursor-pointer rounded-md">
+                        <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{t("nav.settings")}</span>
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <DropdownMenuSeparator className="mx-1" />
                       <DropdownMenuItem
                         onClick={handleLogout}
-                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                        className="mt-1 text-red-600 focus:text-white focus:bg-red-600 cursor-pointer font-bold rounded-md transition-colors"
                       >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Logout
+                        <LogOut className="mr-3 h-4 w-4" />
+                        <span className="text-sm">{t("nav.logout")}</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full"
-                    aria-label="Account"
-                    onClick={() => router.push("/auth/login")}
-                  >
-                    <User className="h-5 w-5" />
-                  </Button>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Mobile menu toggle — only opens sidebar on click */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -552,7 +537,6 @@ export function Header() {
           </div>
 
           {/* ── Mobile Sidebar ── */}
-          {/* Overlay */}
           {mounted && mobileMenuOpen && (
             <div
               className="md:hidden fixed inset-0 bg-black/50 z-40"
@@ -561,15 +545,15 @@ export function Header() {
           )}
 
           <div
-            className={`md:hidden fixed top-0 right-0 z-50 h-screen w-full bg-background  flex flex-col transition-transform duration-300 ease-in-out ${
+            className={`md:hidden fixed top-0 right-0 z-50 h-dvh w-full bg-background flex flex-col transition-transform duration-300 ease-in-out ${
               mounted && mobileMenuOpen ? "translate-x-0" : "translate-x-full"
             }`}
           >
             {/* Sidebar Header */}
-            <div className="flex items-center justify-between px-4 py-3 shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 shrink-0 border-b">
               <div className="flex items-center flex-row" >
-              <span className=" text-xl font-bold">R </span>
-              <p className="text-sm font-medium" >4kie.S</p>
+                <span className=" text-xl font-bold">R </span>
+                <p className="text-sm font-medium" >4kie.S</p>
               </div>
               <Button
                 variant="ghost"
@@ -582,210 +566,247 @@ export function Header() {
               </Button>
             </div>
 
-            {/* User info if logged in */}
-	            {authUser && (
-	              <div className="flex items-center gap-3 px-4 py-3 shrink-0">
-	                <Avatar className="h-9 w-9">
-	                  <AvatarImage src={authUser.avatar} alt={authUser.name ?? "User"} />
-	                  <AvatarFallback className="text-xs font-medium bg-primary text-primary-foreground">
-	                    {getInitials(authUser.name)}
-	                  </AvatarFallback>
-	                </Avatar>
-	                <div className="flex flex-col min-w-0">
-	                  <span className="text-sm font-medium truncate">{authUser.name ?? "Account"}</span>
-	                  <span className="text-xs text-muted-foreground truncate">
-	                    {authUser.email || authUser.phone}
-	                  </span>
-	                </div>
-	              </div>
-	            )}
-
-            {/* Sidebar Nav Items */}
-            <div className="flex-1 overflow-y-auto">
-
-              {/* ── Simple links ── */}
-              <div className="">
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
-                  onClick={() => { router.push("/"); closeSidebar() }}
-                >
-                  Home
-                </button>
-              </div>
-
-              {/* ── Categories ── */}
-              <MobileNavSection label="Categories">
-                {categoriesError ? (
-                  <div className="px-3 py-2 text-sm text-destructive">
-                    Failed to load categories
-                  </div>
-                ) : null}
-                {categoriesLoading && navCategories.length === 0 ? (
-                  <div className="px-3 py-2 text-sm text-muted-foreground">
-                    Loading categories...
-                  </div>
-                ) : null}
-	                {navCategories.map((c) => (
-	                  <MobileNavLink key={c.id} href={`/category/${c.id}`} onClick={closeSidebar}>
-	                    <span className="flex items-center gap-2 min-w-0">
-	                      {c.avatar ? (
-	                        <img
-	                          src={c.avatar}
-	                          alt={c.name}
-	                          className="h-7 w-7 rounded-md object-cover bg-muted shrink-0"
-	                        />
-	                      ) : (
-	                        <span className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-[11px] font-semibold text-muted-foreground shrink-0">
-	                          {c.name.slice(0, 1).toUpperCase()}
-	                        </span>
-	                      )}
-	                      <span className="truncate">{c.name}</span>
-	                    </span>
-	                  </MobileNavLink>
-	                ))}
-                <MobileNavLink href="/categories" onClick={closeSidebar}>
-                  View all categories
-                </MobileNavLink>
-              </MobileNavSection>
-
-              {/* ── Brands ── */}
-              <MobileNavSection label="Brands">
-                {brandsError ? (
-                  <div className="px-3 py-2 text-sm text-destructive">
-                    Failed to load brands
-                  </div>
-                ) : null}
-                {brandsLoading && navBrands.length === 0 ? (
-                  <div className="px-3 py-2 text-sm text-muted-foreground">
-                    Loading brands...
-                  </div>
-                ) : null}
-                {navBrands.map((b) => (
-                  <MobileNavLink key={b.id} href={`/brands/${b.id}`} onClick={closeSidebar}>
-                    <span className="flex items-center gap-2 min-w-0">
-                      {b.avatar ? (
-                        <img
-                          src={b.avatar}
-                          alt={b.name}
-                          className="h-7 w-7 rounded-md object-cover bg-muted shrink-0"
-                        />
-                      ) : (
-                        <span className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-[11px] font-semibold text-muted-foreground shrink-0">
-                          {b.name.slice(0, 1).toUpperCase()}
-                        </span>
-                      )}
-                      <span className="truncate">{b.name}</span>
+            {/* Scrollable area starts here */}
+            <div className="flex-1 overflow-y-auto overscroll-contain flex flex-col">
+              {/* User info */}
+              {authUser && (
+                <div className="flex items-center gap-3 px-4 py-4 shrink-0 border-b bg-muted/20">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={authUser.avatar} alt={authUser.name ?? "User"} />
+                    <AvatarFallback className="text-sm font-medium bg-primary text-primary-foreground">
+                      {getInitials(authUser.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-base font-semibold truncate">{authUser.name ?? t("nav.account")}</span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {authUser.email || authUser.phone}
                     </span>
-                  </MobileNavLink>
-                ))}
-                <MobileNavLink href="/brands" onClick={closeSidebar}>
-                  View all brands
-                </MobileNavLink>
-              </MobileNavSection>
+                  </div>
+                </div>
+              )}
 
-              {/* ── Simple links ── */}
-              <div>
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
-                  onClick={() => { router.push("/deals"); closeSidebar() }}
-                >
-                  Deals
-                </button>
-              </div>
-              <div>
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
-                  onClick={() => { router.push("/new-arrivals"); closeSidebar() }}
-                >
-                  New Arrivals
-                </button>
-              </div>
-              <div>
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
-                  onClick={() => { router.push("/about"); closeSidebar() }}
-                >
-                  About Us
-                </button>
-              </div>
-              <div>
-                <button
-                  className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
-                  onClick={() => { router.push("/contact"); closeSidebar() }}
-                >
-                  Contact
-                </button>
-                {!authUser && (
+              {/* Sidebar Nav Items */}
+              <div className="flex-1 py-2">
+                <div>
                   <button
-                    className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
-                    onClick={() => { router.push("/auth/login"); closeSidebar() }}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:text-primary hover:bg-primary/5 transition-colors"
+                    onClick={() => { router.push("/"); closeSidebar() }}
                   >
-                    Sign In
+                    {t("nav.home")}
                   </button>
-                )}
-              </div>
+                </div>
 
-              {/* ── Account section ── */}
-              <div className="px-3 py-3 space-y-1">
-                {authUser ? (
-                  <>
-                    <p className="text-xs font-semibold text-muted-foreground  px-3 pb-1 pt-2">
-                      Account
-                    </p>
+                <MobileNavSection label={t("nav.categories")}>
+                  {categoriesError ? (
+                    <div className="px-4 py-2 text-xs text-destructive font-medium">
+                      Failed to load
+                    </div>
+                  ) : null}
+                  {navCategories.map((c) => (
+                    <MobileNavLink key={c.id} href={`/category/${c.id}`} onClick={closeSidebar}>
+                      <span className="flex items-center gap-2 min-w-0">
+                        {c.avatar ? (
+                          <NextImage
+                            src={c.avatar}
+                            alt={c.name}
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 rounded-md object-cover bg-muted shrink-0"
+                          />
+                        ) : (
+                          <span className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-[11px] font-semibold text-muted-foreground shrink-0">
+                            {c.name.slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="truncate">{c.name}</span>
+                      </span>
+                    </MobileNavLink>
+                  ))}
+                  <MobileNavLink href="/categories" onClick={closeSidebar}>
+                    {t("nav.viewAll")}
+                  </MobileNavLink>
+                </MobileNavSection>
+
+                <MobileNavSection label={t("nav.brands")}>
+                  {brandsError ? (
+                    <div className="px-4 py-2 text-xs text-destructive font-medium">
+                      Failed to load
+                    </div>
+                  ) : null}
+                  {navBrands.map((b) => (
+                    <MobileNavLink key={b.id} href={`/brands/${b.id}`} onClick={closeSidebar}>
+                      <span className="flex items-center gap-2 min-w-0">
+                        {b.avatar ? (
+                          <NextImage
+                            src={b.avatar}
+                            alt={b.name}
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 rounded-md object-cover bg-muted shrink-0"
+                          />
+                        ) : (
+                          <span className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-[11px] font-semibold text-muted-foreground shrink-0">
+                            {b.name.slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="truncate">{b.name}</span>
+                      </span>
+                    </MobileNavLink>
+                  ))}
+                  <MobileNavLink href="/brands" onClick={closeSidebar}>
+                    {t("nav.viewAll")}
+                  </MobileNavLink>
+                </MobileNavSection>
+
+                <div>
+                  <button
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:text-primary hover:bg-primary/5 transition-colors"
+                    onClick={() => { router.push("/deals"); closeSidebar() }}
+                  >
+                    {t("nav.deals")}
+                  </button>
+                </div>
+                <div>
+                  <button
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:text-primary hover:bg-primary/5 transition-colors"
+                    onClick={() => { router.push("/new-arrivals"); closeSidebar() }}
+                  >
+                    {t("nav.newArrivals")}
+                  </button>
+                </div>
+                <div>
+                  <button
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:text-primary hover:bg-primary/5 transition-colors"
+                    onClick={() => { router.push("/about"); closeSidebar() }}
+                  >
+                    {t("nav.about")}
+                  </button>
+                </div>
+                <div>
+                  <button
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:text-primary hover:bg-primary/5 transition-colors"
+                    onClick={() => { router.push("/contact"); closeSidebar() }}
+                  >
+                    {t("nav.contact")}
+                  </button>
+                  {!authUser && (
                     <button
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:text-primary hover:bg-primary-50 transition-colors"
-                      onClick={() => { router.push("/profile"); closeSidebar() }}
+                      className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium hover:text-primary hover:bg-primary/5 transition-colors"
+                      onClick={() => { router.push("/auth/login"); closeSidebar() }}
                     >
-                      Profile
+                      {t("nav.signIn")}
                     </button>
+                  )}
+                </div>
+
+                {/* Account section */}
+                <div className="px-1 py-1 space-y-1">
+                  {authUser && (
+                    <>
+                      <p className="text-[10px] font-bold text-muted-foreground px-4 pb-1 pt-4 uppercase tracking-wider">
+                        {t("nav.account")}
+                      </p>
+                      <button
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm hover:text-primary hover:bg-primary/5 transition-colors"
+                        onClick={() => { router.push("/profile"); closeSidebar() }}
+                      >
+                        {t("nav.profile")}
+                      </button>
+                      <button
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm hover:text-primary hover:bg-primary/5 transition-colors"
+                        onClick={() => { router.push("/orders"); closeSidebar() }}
+                      >
+                        {t("nav.orders")}
+                      </button>
+                      <button
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm hover:text-primary hover:bg-primary/5 transition-colors"
+                        onClick={() => { router.push("/settings"); closeSidebar() }}
+                      >
+                        {t("nav.settings")}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Mobile Language Switcher */}
+                <div className="px-5 py-4 mt-4 border-t border-muted/50">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Language / ភាសា</p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setLanguage("en")}
+                      className={`flex items-center justify-center gap-2 flex-1 py-2 rounded-md border transition-all duration-300 ${language === "en" ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/10" : "bg-muted/40 border-transparent text-muted-foreground hover:bg-muted/60"}`}
+                    >
+                      <USFlag /> <span className="text-[11px] font-semibold">English</span>
+                    </button>
+                    <button 
+                      onClick={() => setLanguage("kh")}
+                      className={`flex items-center justify-center gap-2 flex-1 py-2 rounded-md border transition-all duration-300 ${language === "kh" ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/10" : "bg-muted/40 border-transparent text-muted-foreground hover:bg-muted/60"}`}
+                    >
+                      <CambodiaFlag /> <span className="text-[11px] font-semibold">ខ្មែរ</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile Theme Switcher */}
+                <div className="px-5 py-4 mt-1 border-t border-muted/50">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">{t("nav.theme")}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button 
+                      onClick={() => setTheme("light")}
+                      className={`flex flex-col items-center justify-center gap-1 py-1.5 rounded-md border transition-all duration-300 ${mounted && theme === "light" ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/10" : "bg-muted/40 border-transparent text-muted-foreground hover:bg-muted/60"}`}
+                    >
+                      <Sun className="h-3.5 w-3.5" /> 
+                      <span className="text-[9px] font-semibold">{t("theme.light")}</span>
+                    </button>
+                    <button 
+                      onClick={() => setTheme("dark")}
+                      className={`flex flex-col items-center justify-center gap-1 py-1.5 rounded-md border transition-all duration-300 ${mounted && theme === "dark" ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/10" : "bg-muted/40 border-transparent text-muted-foreground hover:bg-muted/60"}`}
+                    >
+                      <Moon className="h-3.5 w-3.5" /> 
+                      <span className="text-[9px] font-semibold">{t("theme.dark")}</span>
+                    </button>
+                    <button 
+                      onClick={() => setTheme("system")}
+                      className={`flex flex-col items-center justify-center gap-1 py-1.5 rounded-md border transition-all duration-300 ${mounted && theme === "system" ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/10" : "bg-muted/40 border-transparent text-muted-foreground hover:bg-muted/60"}`}
+                    >
+                      <Settings className="h-3.5 w-3.5" /> 
+                      <span className="text-[9px] font-semibold">{t("theme.system")}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Logout section */}
+                {authUser && (
+                  <div className="mt-4 px-5 pb-10">
                     <button
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:text-primary hover:bg-primary-50 transition-colors"
-                      onClick={() => { router.push("/orders"); closeSidebar() }}
+                      className="group flex items-center justify-center gap-2 w-full py-4 rounded-xl border-2 border-destructive/20 text-destructive bg-destructive/5 hover:bg-destructive hover:text-white transition-all duration-300 font-black text-sm uppercase tracking-widest shadow-sm active:scale-95"
+                      onClick={() => { handleLogout(); closeSidebar() }}
                     >
-                      My Orders
+                      <LogOut className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                      {t("nav.logout")}
                     </button>
-                    <button
-                      className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm hover:text-primary hover:bg-primary-50 transition-colors"
-                      onClick={() => { router.push("/settings"); closeSidebar() }}
-                    >
-                      Settings
-                    </button>
-                  </>
-                ) : (
-                  <>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
-
-            {/* Sidebar Footer — Logout */}
-            {authUser && (
-              <div className="shrink-0 px-3 py-3">
-                <button
-                  className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  onClick={() => { handleLogout(); closeSidebar() }}
-                >
-                  Logout
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </header>
 
       {/* Navigation Menu — desktop only */}
-      <nav className="bg-background pt-4 hidden md:block">
+      <nav className="bg-background pt-3 pb-3 border-b hidden md:block">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <NavigationMenu className="w-full">
-            <NavigationMenuList className="justify-center space-x-8">
+            <NavigationMenuList className="justify-center space-x-6">
               <NavigationMenuItem>
                 <NavigationMenuLink href="/" className={navigationMenuTriggerStyle()}>
-                  Home
+                  {t("nav.home")}
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
 	              <NavigationMenuItem>
-	                <NavigationMenuTrigger className="text-sm font-medium">Categories</NavigationMenuTrigger>
+	                <NavigationMenuTrigger className="text-sm font-medium">{t("nav.categories")}</NavigationMenuTrigger>
 	                <NavigationMenuContent>
 	                  <div className="grid gap-3 p-4 w-[420px] lg:w-[560px] lg:grid-cols-[.75fr_1fr]">
 	                    <div className="grid gap-3">
@@ -794,22 +815,9 @@ export function Header() {
 	                          href="/categories"
 	                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:"
 	                        >
-	                          <div className="mb-2 mt-4 text-lg font-medium">Browse Categories</div>
-	                          <p className="text-sm leading-tight text-muted-foreground">
-	                            Find products by category.
-	                          </p>
+	                          <div className="mb-2 mt-4 text-lg font-medium">{t("nav.browseCategories")}</div>
 	                        </Link>
 	                      </NavigationMenuLink>
-	                      {categoriesError ? (
-	                        <p className="text-xs text-destructive px-1">
-	                          Failed to load categories.
-	                        </p>
-	                      ) : null}
-	                      {categoriesLoading && navCategories.length === 0 ? (
-	                        <p className="text-xs text-muted-foreground px-1">
-	                          Loading...
-	                        </p>
-	                      ) : null}
 	                    </div>
 		                    <div className="grid grid-cols-2 gap-3">
 		                      {navCategories.map((c) => (
@@ -820,9 +828,11 @@ export function Header() {
 		                          >
 		                            <div className="flex items-center gap-2">
 		                              {c.avatar ? (
-		                                <img
+		                                <NextImage
 		                                  src={c.avatar}
 		                                  alt={c.name}
+                                      width={32}
+                                      height={32}
 		                                  className="h-8 w-8 rounded-md object-cover bg-muted shrink-0"
 		                                />
 		                              ) : (
@@ -842,7 +852,7 @@ export function Header() {
 		                          href="/categories"
 		                          className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50"
 		                        >
-		                          <div className="text-sm font-medium leading-none">View all</div>
+		                          <div className="text-sm font-medium leading-none">{t("nav.viewAll")}</div>
 		                        </Link>
 		                      </NavigationMenuLink>
 		                    </div>
@@ -851,7 +861,7 @@ export function Header() {
 	              </NavigationMenuItem>
 
 	              <NavigationMenuItem>
-	                <NavigationMenuTrigger className="text-sm font-medium">Brands</NavigationMenuTrigger>
+	                <NavigationMenuTrigger className="text-sm font-medium">{t("nav.brands")}</NavigationMenuTrigger>
 	                <NavigationMenuContent>
 	                  <div className="grid gap-3 p-4 w-[420px] lg:w-[560px] lg:grid-cols-[.75fr_1fr]">
 	                    <div className="grid gap-3">
@@ -860,22 +870,9 @@ export function Header() {
 	                          href="/brands"
 	                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-linear-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:"
 	                        >
-	                          <div className="mb-2 mt-4 text-lg font-medium">Browse Brands</div>
-	                          <p className="text-sm leading-tight text-muted-foreground">
-	                            Explore all brands and new arrivals.
-	                          </p>
+	                          <div className="mb-2 mt-4 text-lg font-medium">{t("nav.browseBrands")}</div>
 	                        </Link>
 	                      </NavigationMenuLink>
-	                      {brandsError ? (
-	                        <p className="text-xs text-destructive px-1">
-	                          Failed to load brands.
-	                        </p>
-	                      ) : null}
-	                      {brandsLoading && navBrands.length === 0 ? (
-	                        <p className="text-xs text-muted-foreground px-1">
-	                          Loading...
-	                        </p>
-	                      ) : null}
 	                    </div>
 	                    <div className="grid grid-cols-2 gap-3">
 	                      {navBrands.map((b) => (
@@ -887,9 +884,11 @@ export function Header() {
 	                          >
 	                            <div className="flex items-center gap-2">
 	                              {b.avatar ? (
-	                                <img
+	                                <NextImage
 	                                  src={b.avatar}
 	                                  alt={b.name}
+                                    width={32}
+                                    height={32}
 	                                  className="h-8 w-8 rounded-md object-cover bg-muted shrink-0"
 	                                />
 	                              ) : (
@@ -905,16 +904,13 @@ export function Header() {
 	                        </NavigationMenuLink>
 	                      ))}
 	                      <NavigationMenuLink asChild>
-	                        <Link
-	                          href="/brands"
-	                          className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50"
-	                        >
-	                          <div className="text-sm font-medium leading-none">View all</div>
-	                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-	                            See every brand
-	                          </p>
-	                        </Link>
-	                      </NavigationMenuLink>
+		                        <Link
+		                          href="/brands"
+		                          className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50"
+		                        >
+		                          <div className="text-sm font-medium leading-none">{t("nav.viewAll")}</div>
+		                        </Link>
+		                      </NavigationMenuLink>
 	                    </div>
 	                  </div>
 	                </NavigationMenuContent>
@@ -922,25 +918,25 @@ export function Header() {
 
               <NavigationMenuItem>
                 <NavigationMenuLink href="/deals" className={navigationMenuTriggerStyle()}>
-                  Deals
+                  {t("nav.deals")}
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
                 <NavigationMenuLink href="/new-arrivals" className={navigationMenuTriggerStyle()}>
-                  New Arrivals
+                  {t("nav.newArrivals")}
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
                 <NavigationMenuLink href="/about" className={navigationMenuTriggerStyle()}>
-                  About Us
+                  {t("nav.about")}
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
                 <NavigationMenuLink href="/contact" className={navigationMenuTriggerStyle()}>
-                  Contact
+                  {t("nav.contact")}
                 </NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
@@ -948,7 +944,6 @@ export function Header() {
         </div>
       </nav>
 
-      {/* Search Dialog */}
       <SearchDialog
         isOpen={isSearchDialogOpen}
         onClose={() => setIsSearchDialogOpen(false)}
