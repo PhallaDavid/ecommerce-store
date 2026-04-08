@@ -1,11 +1,11 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ChevronRight, Loader2, Save, User } from "lucide-react"
 
 import api from "@/utils/axios"
-import { AuthDialog } from "@/components/auth-dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
@@ -60,7 +60,7 @@ function coerceNumberString(value: unknown): string {
 }
 
 export default function ProfilePage() {
-  const [isAuthDialogOpen, setIsAuthDialogOpen] = React.useState(false)
+  const router = useRouter()
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -189,7 +189,7 @@ export default function ProfilePage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setIsAuthDialogOpen(true)}
+                    onClick={() => router.push("/auth/login")}
                   >
                     Login
                   </Button>
@@ -334,16 +334,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <AuthDialog
-          isOpen={isAuthDialogOpen}
-          onClose={() => {
-            setIsAuthDialogOpen(false)
-            if (localStorage.getItem("auth_token")) {
-              setTokenAvailable(true)
-              void fetchProfile()
-            }
-          }}
-        />
       </div>
     </div>
   )

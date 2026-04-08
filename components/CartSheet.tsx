@@ -79,7 +79,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                     size="icon-sm"
                     className="rounded-full"
                     aria-label="Remove"
-                    onClick={() => removeFromCart(it.id)}
+                    onClick={() => removeFromCart(it.id, it.variant_id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -97,7 +97,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                       size="icon-xs"
                       className="rounded-full"
                       aria-label="Decrease quantity"
-                      onClick={() => updateCartQty(it.id, it.qty - 1)}
+                      onClick={() => updateCartQty(it.id, it.qty - 1, it.variant_id)}
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
@@ -110,7 +110,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                       size="icon-xs"
                       className="rounded-full"
                       aria-label="Increase quantity"
-                      onClick={() => updateCartQty(it.id, it.qty + 1)}
+                      onClick={() => updateCartQty(it.id, it.qty + 1, it.variant_id)}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>

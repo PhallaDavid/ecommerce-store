@@ -39,6 +39,8 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
         const token = response.data?.token
         if (typeof token === "string" && token) {
           localStorage.setItem('auth_token', token)
+          // Set cookie for middleware support
+          document.cookie = `auth_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
         }
         if (response.data?.user) {
           localStorage.setItem('user_data', JSON.stringify(response.data.user))

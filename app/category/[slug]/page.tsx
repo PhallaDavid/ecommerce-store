@@ -9,17 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { addToCart, getFavourites, subscribeStore, toggleFavourite } from "@/lib/store"
 import api from "@/utils/axios"
+import { Category, PaginatedResponse } from "@/types/api"
 
 type PageProps = {
   params: Promise<{ slug: string }>
-}
-
-type Category = {
-  id: number
-  name: string
-  description: string | null
-  avatar: string | null
-  created_at: string
 }
 
 const allProducts = [
@@ -132,10 +125,14 @@ export default function CategoryPage({ params }: PageProps) {
       setCategoryLoading(true)
       setCategoryError(null)
       try {
-        const res = await api.get<Category[]>("/categories")
-        const found = Array.isArray(res.data)
-          ? res.data.find((c) => c.id === categoryId) ?? null
-          : null
+        const res = await api.get<PaginatedResponse<Category>>("/categories")
+        
+        // Handle both paginated and non-paginated (legacy) responses
+        const data = res.data && "data" in res.data 
+          ? res.data.data 
+          : (Array.isArray(res.data) ? res.data : [])
+
+        const found = data.find((c) => c.id === categoryId) ?? null
         if (!cancelled) setCategory(found)
       } catch (e: unknown) {
         if (!cancelled) {
@@ -247,7 +244,7 @@ export default function CategoryPage({ params }: PageProps) {
                 className="group overflow-hidden rounded-2xl border bg-card hover:bg-muted/30 transition-colors"
               >
                 <div className="relative">
-                  <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+                  <div className="relative aspect-3/4 overflow-hidden bg-muted">
                     <img
                       src={p.image}
                       alt={p.name}

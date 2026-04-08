@@ -5,14 +5,7 @@ import Link from "next/link"
 import { ArrowRight, Loader2 } from "lucide-react"
 
 import api from "@/utils/axios"
-
-type Brand = {
-  id: number
-  name: string
-  description: string | null
-  avatar: string | null
-  created_at: string
-}
+import { Brand, PaginatedResponse } from "@/types/api"
 
 export default function BrandsPage() {
   const [brands, setBrands] = React.useState<Brand[]>([])
@@ -25,9 +18,14 @@ export default function BrandsPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const res = await api.get<Brand[]>("/brands")
+        const res = await api.get<PaginatedResponse<Brand>>("/brands")
         if (cancelled) return
-        setBrands(Array.isArray(res.data) ? res.data : [])
+        
+        const data = res.data && "data" in res.data 
+          ? res.data.data 
+          : (Array.isArray(res.data) ? res.data : [])
+
+        setBrands(data)
       } catch (e: unknown) {
         if (cancelled) return
         setError(e instanceof Error ? e.message : "Failed to load brands")
@@ -72,7 +70,7 @@ export default function BrandsPage() {
                 className="group overflow-hidden rounded-2xl border bg-card hover:bg-muted/30 transition-colors"
                 aria-label={brand.name}
               >
-                <div className="relative aspect-[16/10] bg-muted">
+                <div className="relative aspect-16/10 bg-muted">
                   {brand.avatar ? (
                     <>
                       <img

@@ -10,21 +10,9 @@ import { Input } from "@/components/ui/input"
 import { cn, formatPrice } from "@/lib/utils"
 import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
+import { Product, PaginatedResponse } from "@/types/api"
 
-type ApiProduct = {
-  id: number
-  name: string
-  description: string | null
-  original_price: string | number | null
-  promo_price: string | number | null
-  current_price: number | null
-  is_on_sale: boolean | null
-  thumbnail: string | null
-  status: string | null
-  created_at: string | null
-}
-
-type ProductCard = {
+type ProductCardProps = {
   id: string
   name: string
   description?: string
@@ -47,7 +35,7 @@ function toNumber(value: unknown): number | null {
 
 
 export default function ProductsPage() {
-  const [products, setProducts] = React.useState<ProductCard[]>([])
+  const [products, setProducts] = React.useState<ProductCardProps[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [query, setQuery] = React.useState("")
@@ -60,9 +48,14 @@ export default function ProductsPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const res = await api.get<ApiProduct[]>("/products")
-        const list = Array.isArray(res.data) ? res.data : []
-        const mapped: ProductCard[] = list
+        const res = await api.get<PaginatedResponse<Product>>("/products")
+        
+        // Handle both paginated and non-paginated (legacy) responses
+        const data = res.data && "data" in res.data 
+          ? res.data.data 
+          : (Array.isArray(res.data) ? res.data : [])
+
+        const mapped: ProductCardProps[] = data
           .filter((p) => (p.status ? p.status === "active" : true))
           .map((p) => {
             const id = String(p.id)

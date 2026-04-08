@@ -4,6 +4,8 @@ import Link from "next/link";
 import { NewArrivalsProducts } from "@/components/NewArrivalsProducts";
 import { NewCollection } from "@/components/NewCollection";
 import { ImageBanners } from "@/components/ImageBanner";
+import { PromotionProducts } from "@/components/PromotionProducts";
+import { TopBrands } from "@/components/TopBrands";
 import {
   Carousel,
   CarouselContent,
@@ -14,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import api from "@/utils/axios";
 import { useState, useEffect, useRef } from "react";
+import { Category, Banner, PaginatedResponse } from "@/types/api";
 
 function useCarouselDots(slidesLength: number) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -37,23 +40,6 @@ function useCarouselDots(slidesLength: number) {
     isTransitioning,
   };
 }
-
-type Category = {
-  id: number;
-  name: string;
-  description: string | null;
-  avatar: string | null;
-  created_at: string;
-};
-
-type Banner = {
-  id: number;
-  title: string;
-  description: string | null;
-  image: string;
-  status: string;
-  created_at: string;
-};
 
 export default function Home() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -96,9 +82,14 @@ export default function Home() {
       setCategoriesLoading(true);
       setCategoriesError(null);
       try {
-        const res = await api.get<Category[]>("/categories");
+        const res = await api.get<PaginatedResponse<Category>>("/categories");
         if (cancelled) return;
-        const data = Array.isArray(res.data) ? res.data : [];
+
+        // Handle both paginated and non-paginated (legacy) responses
+        const data = res.data && "data" in res.data 
+          ? res.data.data 
+          : (Array.isArray(res.data) ? res.data : [])
+
         setTopCategories(data.slice(0, 12));
       } catch (e: unknown) {
         if (cancelled) return;
@@ -193,7 +184,7 @@ export default function Home() {
                               </p>
                             ) : null}
                             <Button
-                              className="mt-3 bg-primary text-white hover:bg-primary-50/90 transition-transform hover:scale-105 duration-300 animate-in slide-in-from-bottom-4 duration-700 delay-200"
+                              className="mt-3 bg-primary text-white hover:bg-primary-50/90 transition-transform hover:scale-105 animate-in slide-in-from-bottom-4 duration-700 delay-200"
                               size="lg"
                             >
                               Shop Now
@@ -225,10 +216,10 @@ export default function Home() {
             </CarouselContent>
 
             {/* LEFT ARROW inside banner */}
-            <CarouselPrevious className="absolute hidden md:inline-flex left-4 top-1/2 -translate-y-1/2 z-10 text-white p-2 bg-black/30 rounded-full hover:bg-black/50 transition-all duration-300 hover:scale-110 hover:bg-black/60 animate-in fade-in duration-500" />
+            <CarouselPrevious className="absolute hidden md:inline-flex left-4 top-1/2 -translate-y-1/2 z-10 text-white p-2 bg-black/30 rounded-full hover:bg-black/50 transition-all hover:scale-110 animate-in fade-in duration-500" />
 
             {/* RIGHT ARROW inside banner */}
-            <CarouselNext className="absolute hidden md:inline-flex right-4 top-1/2 -translate-y-1/2 z-10 text-white p-2 bg-black/30 rounded-full hover:bg-black/50 transition-all duration-300 hover:scale-110 hover:bg-black/60 animate-in fade-in duration-500" />
+            <CarouselNext className="absolute hidden md:inline-flex right-4 top-1/2 -translate-y-1/2 z-10 text-white p-2 bg-black/30 rounded-full hover:bg-black/50 transition-all hover:scale-110 animate-in fade-in duration-500" />
           </Carousel>
 
           {bannersError ? (
@@ -268,7 +259,7 @@ export default function Home() {
 	                      className="basis-1/2 sm:basis-1/3 md:basis-1/6"
 	                    >
 	                      <div className="flex w-full p-2 flex-col items-center rounded-md bg-card">
-	                        <div className="w-full aspect-square rounded-md bg-muted animate-pulse" />
+	                        <div className="relative aspect-square w-full overflow-hidden rounded-md bg-muted animate-pulse" />
 	                        <div className="mt-3 h-4 w-2/3 rounded bg-muted animate-pulse" />
 	                      </div>
 	                    </CarouselItem>
@@ -308,6 +299,10 @@ export default function Home() {
             <CarouselNext className="hidden md:inline-flex -right-6" />
           </Carousel>
         </section>
+
+        <TopBrands />
+
+        <PromotionProducts />
 
         <NewArrivalsProducts />
         <ImageBanners />

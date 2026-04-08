@@ -16,20 +16,9 @@ import api from "@/utils/axios"
 import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
 import { formatPrice } from "@/lib/utils"
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
+import { Product, PaginatedResponse } from "@/types/api"
 
-type ApiProduct = {
-  id: number
-  name: string
-  thumbnail: string | null
-  original_price: string | number | null
-  promo_price: string | number | null
-  current_price: number | null
-  is_on_sale: boolean | null
-  status?: string | null
-  created_at?: string | null
-}
-
-type ProductCard = {
+type ProductCardProps = {
   id: string
   name: string
   href: string
@@ -51,7 +40,7 @@ function toNumber(value: unknown): number | null {
 
 
 export function NewCollection() {
-  const [products, setProducts] = React.useState<ProductCard[]>([])
+  const [products, setProducts] = React.useState<ProductCardProps[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [favs, setFavs] = React.useState<Record<string, boolean>>({})
@@ -62,9 +51,14 @@ export function NewCollection() {
       setIsLoading(true)
       setError(null)
       try {
-        const res = await api.get<ApiProduct[]>("/products")
-        const list = Array.isArray(res.data) ? res.data : []
-        const mapped: ProductCard[] = list
+        const res = await api.get<PaginatedResponse<Product>>("/products/new-collection?page=1&limit=12")
+        
+        // Handle both paginated and non-paginated (legacy) responses
+        const data = res.data && "data" in res.data 
+          ? res.data.data 
+          : (Array.isArray(res.data) ? res.data : [])
+
+        const mapped: ProductCardProps[] = data
           .filter((p) => (p.status ? p.status === "active" : true))
           .slice(0, 12)
           .map((p) => {

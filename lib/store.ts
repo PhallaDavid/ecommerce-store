@@ -1,3 +1,5 @@
+import api from "@/utils/axios"
+
 export type FavouriteItem = {
   id: string
   name: string
@@ -8,7 +10,9 @@ export type FavouriteItem = {
 }
 
 export type CartItem = {
-  id: string
+  id: string // product id or composite id
+  cart_id?: number // backend cart item id
+  variant_id?: number
   name: string
   href: string
   image: string
@@ -16,9 +20,14 @@ export type CartItem = {
   qty: number
 }
 
-const FAVOURITES_KEY = "r4kies:favourites"
+const FAVOURITES_KEY = "r4kies:favourites" 
 const CART_KEY = "r4kies:cart"
 const STORE_EVENT = "r4kies:store"
+
+// In-memory cache for favorites
+let inMemoryFavs: FavouriteItem[] = []
+// In-memory cache for cart
+let inMemoryCart: CartItem[] = []
 
 function safeParseJson<T>(raw: string | null, fallback: T): T {
   if (!raw) return fallback
@@ -37,77 +46,188 @@ function emitStoreUpdate() {
 export function subscribeStore(callback: () => void) {
   if (typeof window === "undefined") return () => {}
 
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === FAVOURITES_KEY || e.key === CART_KEY) callback()
-  }
   const onCustom = () => callback()
-
-  window.addEventListener("storage", onStorage)
   window.addEventListener(STORE_EVENT, onCustom)
   return () => {
-    window.removeEventListener("storage", onStorage)
     window.removeEventListener(STORE_EVENT, onCustom)
   }
 }
 
 export function getFavourites(): FavouriteItem[] {
-  if (typeof window === "undefined") return []
-  return safeParseJson<FavouriteItem[]>(window.localStorage.getItem(FAVOURITES_KEY), [])
+  return inMemoryFavs
 }
 
 export function setFavourites(items: FavouriteItem[]) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(FAVOURITES_KEY, JSON.stringify(items))
+  inMemoryFavs = items
   emitStoreUpdate()
 }
 
 export function isFavourite(id: string) {
-  return getFavourites().some((item) => item.id === id)
+  return inMemoryFavs.some((item) => item.id === id)
+}
+
+/**
+ * Synchronize local favorites with the server if logged in.
+ */
+export async function syncFavoritesWithServer() {
+  if (typeof window === "undefined") return
+  const token = localStorage.getItem("auth_token")
+  if (!token) return
+
+  try {
+    const res = await api.get("/favorites")
+    const serverFavs = Array.isArray(res.data) ? res.data : []
+    
+    const mapped: FavouriteItem[] = serverFavs.map((f: any) => ({
+      id: String(f.id),
+      name: f.name,
+      href: `/products/${f.id}`,
+      image: f.thumbnail || "/images/STU_8189-cr-450x672.jpg",
+      price: typeof f.current_price === "number" ? f.current_price : Number(f.promo_price || f.original_price || 0),
+      compareAt: f.original_price ? Number(f.original_price) : undefined
+    }))
+    
+    setFavourites(mapped)
+  } catch (err) {
+    console.error("Failed to sync favorites:", err)
+  }
+}
+
+export async function syncCartWithServer() {
+  if (typeof window === "undefined") return
+  const token = localStorage.getItem("auth_token")
+  if (!token) return
+
+  try {
+    const res = await api.get("/cart")
+    const serverCart = Array.isArray(res.data) ? res.data : []
+    
+    const mapped: CartItem[] = serverCart.map((it: any) => {
+      // Fix potential double URL mess: http://rakiestore.onrender.comhttps://res.cloudinary.com/...
+      let thumb = it.thumbnail || ""
+      if (thumb.includes("http") && thumb.lastIndexOf("http") > 0) {
+        thumb = thumb.slice(thumb.lastIndexOf("http"))
+      }
+
+      return {
+        id: String(it.product_id),
+        cart_id: it.id,
+        variant_id: it.variant_id,
+        name: it.name || it.product_name || "Product",
+        href: `/products/${it.product_id}`,
+        image: thumb || "/images/STU_8189-cr-450x672.jpg",
+        price: Number(it.promo_price || it.original_price || it.price || 0),
+        qty: it.quantity
+      }
+    })
+    
+    setCart(mapped)
+  } catch (err) {
+    console.error("Failed to sync cart:", err)
+  }
 }
 
 export function toggleFavourite(item: FavouriteItem) {
-  const current = getFavourites()
-  const exists = current.some((x) => x.id === item.id)
-  const next = exists ? current.filter((x) => x.id !== item.id) : [item, ...current]
+  if (typeof window === "undefined") return []
+
+  const token = localStorage.getItem("auth_token")
+  if (!token) {
+    window.location.href = "/auth/login"
+    return inMemoryFavs
+  }
+
+  // Optimistic UI update
+  const exists = inMemoryFavs.some((x) => x.id === item.id)
+  const next = exists 
+    ? inMemoryFavs.filter((x) => x.id !== item.id) 
+    : [item, ...inMemoryFavs]
+  
   setFavourites(next)
+
+  // Sync with server
+  if (exists) {
+    api.delete(`/favorites/${item.id}`)
+      .catch(err => console.error("Failed to remove favorite on server:", err))
+  } else {
+    api.post("/favorites/add", { product_id: Number(item.id) })
+      .catch(err => console.error("Failed to add favorite on server:", err))
+  }
+
   return next
 }
 
 export function getCart(): CartItem[] {
-  if (typeof window === "undefined") return []
-  return safeParseJson<CartItem[]>(window.localStorage.getItem(CART_KEY), [])
+  return inMemoryCart
 }
 
 export function setCart(items: CartItem[]) {
-  if (typeof window === "undefined") return
-  window.localStorage.setItem(CART_KEY, JSON.stringify(items))
+  inMemoryCart = items
   emitStoreUpdate()
 }
 
 export function addToCart(item: Omit<CartItem, "qty">, qty = 1) {
+  if (typeof window === "undefined") return []
+
+  const token = localStorage.getItem("auth_token")
+  if (!token) {
+    window.location.href = "/auth/login"
+    return inMemoryCart
+  }
+
   const current = getCart()
-  const idx = current.findIndex((x) => x.id === item.id)
+  const idx = current.findIndex((x) => x.id === item.id && x.variant_id === item.variant_id)
   const next =
     idx >= 0
       ? current.map((x, i) => (i === idx ? { ...x, qty: x.qty + qty } : x))
       : [{ ...item, qty }, ...current]
+  
   setCart(next)
+
+  // Sync with server
+  api.post("/cart/add", { 
+    product_id: Number(item.id), 
+    variant_id: item.variant_id || null, 
+    quantity: qty 
+  }).then(() => syncCartWithServer()) // Re-sync to get the backend cart_id
+    .catch(err => console.error("Failed to add to cart on server:", err))
+
   return next
 }
 
-export function updateCartQty(id: string, qty: number) {
+export function updateCartQty(id: string, qty: number, variant_id?: number) {
   const current = getCart()
+  const item = current.find((x) => x.id === id && (variant_id ? x.variant_id === variant_id : true))
+  
   const next = current
-    .map((x) => (x.id === id ? { ...x, qty } : x))
+    .map((x) => (x.id === id && (variant_id ? x.variant_id === variant_id : true) ? { ...x, qty } : x))
     .filter((x) => x.qty > 0)
+  
   setCart(next)
+
+  if (item?.cart_id) {
+    if (qty <= 0) {
+      api.delete(`/cart/${item.cart_id}`)
+        .catch(err => console.error("Failed to remove from cart on server:", err))
+    } else {
+      api.put(`/cart/${item.cart_id}`, { quantity: qty })
+        .catch(err => console.error("Failed to update cart qty on server:", err))
+    }
+  }
+
   return next
 }
 
-export function removeFromCart(id: string) {
+export function removeFromCart(id: string, variant_id?: number) {
   const current = getCart()
-  const next = current.filter((x) => x.id !== id)
+  const item = current.find((x) => x.id === id && (variant_id ? x.variant_id === variant_id : true))
+  const next = current.filter((x) => !(x.id === id && (variant_id ? x.variant_id === variant_id : true)))
+  
   setCart(next)
+
+  if (item?.cart_id) {
+    api.delete(`/cart/${item.cart_id}`)
+      .catch(err => console.error("Failed to remove from cart on server:", err))
+  }
+
   return next
 }
-

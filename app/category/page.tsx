@@ -5,14 +5,7 @@ import Link from "next/link"
 import { ArrowRight, Loader2 } from "lucide-react"
 
 import api from "@/utils/axios"
-
-type Category = {
-  id: number
-  name: string
-  description: string | null
-  avatar: string | null
-  created_at: string
-}
+import { Category, PaginatedResponse } from "@/types/api"
 
 export default function CategoriesPage() {
   const [categories, setCategories] = React.useState<Category[]>([])
@@ -25,9 +18,15 @@ export default function CategoriesPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const res = await api.get<Category[]>("/categories")
+        const res = await api.get<PaginatedResponse<Category>>("/categories")
         if (cancelled) return
-        setCategories(Array.isArray(res.data) ? res.data : [])
+        
+        // Handle both paginated and non-paginated (legacy) responses
+        const data = res.data && "data" in res.data 
+          ? res.data.data 
+          : (Array.isArray(res.data) ? res.data : [])
+          
+        setCategories(data)
       } catch (e: unknown) {
         if (cancelled) return
         setError(e instanceof Error ? e.message : "Failed to load categories")
@@ -103,3 +102,4 @@ export default function CategoriesPage() {
     </div>
   )
 }
+

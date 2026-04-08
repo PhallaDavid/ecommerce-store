@@ -255,7 +255,7 @@ export default function CheckoutPage() {
 
   const canProceed = (() => {
     if (step === 0) return items.length > 0
-    if (step === 1) return !!(form.firstName && form.lastName && form.email && mapLocation)
+    if (step === 1) return !!mapLocation
     if (step === 2) {
       if (payMethod === "card") return !!(form.cardName && form.cardNumber && form.cardExpiry && form.cardCvc)
       return true // khqr, aba, bank, cod — no extra fields
@@ -339,19 +339,6 @@ export default function CheckoutPage() {
   // ── STEP 1: Delivery ───────────────────────────────────────────────────────
   const DeliveryStep = (
     <div className="space-y-5">
-      {/* Contact info */}
-      <div className="rounded-2xl border bg-card p-5 space-y-4">
-        <p className="text-sm font-semibold flex items-center gap-2">
-          <ShoppingBag className="h-4 w-4 text-primary" /> Contact
-        </p>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="First Name" id="firstName" placeholder="John" value={form.firstName} onChange={(v) => setForm(f => ({ ...f, firstName: v }))} required />
-          <Field label="Last Name" id="lastName" placeholder="Doe" value={form.lastName} onChange={(v) => setForm(f => ({ ...f, lastName: v }))} required />
-        </div>
-        <Field label="Email" id="email" type="email" placeholder="john@example.com" value={form.email} onChange={(v) => setForm(f => ({ ...f, email: v }))} required />
-        <Field label="Phone" id="phone" type="tel" placeholder="+855 12 345 678" value={form.phone} onChange={(v) => setForm(f => ({ ...f, phone: v }))} />
-      </div>
-
       {/* Map location picker */}
       <div className="rounded-2xl border bg-card p-5 space-y-4">
         <p className="text-sm font-semibold flex items-center gap-2">
@@ -364,17 +351,6 @@ export default function CheckoutPage() {
         />
       </div>
 
-      {/* Delivery note */}
-      <div className="rounded-2xl border bg-card p-5 space-y-2">
-        <label htmlFor="note" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Delivery Note (optional)
-        </label>
-        <textarea
-          id="note" rows={3} placeholder="e.g. Leave at the door, call before arriving…"
-          value={form.note} onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
-          className="w-full rounded-md border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary/30 resize-none"
-        />
-      </div>
     </div>
   )
 

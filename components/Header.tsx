@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -22,12 +22,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AuthDialog } from "@/components/auth-dialog"
 import { SearchDialog } from "@/components/search-dialog"
 import { CartSheet } from "@/components/CartSheet"
 import { FavouritesSheet } from "@/components/FavouritesSheet"
-import { getCart, getFavourites, subscribeStore } from "@/lib/store"
+import { getCart, getFavourites, subscribeStore, syncFavoritesWithServer, syncCartWithServer } from "@/lib/store"
 import api from "@/utils/axios"
+import { Category, Brand, PaginatedResponse } from "@/types/api"
 import {
   Heart,
   ShoppingCart,
@@ -114,22 +114,6 @@ interface AuthUser {
   email?: string
   phone?: string
   avatar?: string
-}
-
-type Category = {
-  id: number
-  name: string
-  description: string | null
-  avatar: string | null
-  created_at: string
-}
-
-type Brand = {
-  id: number
-  name: string
-  description: string | null
-  avatar: string | null
-  created_at: string
 }
 
 function normalizeAuthUser(raw: unknown): AuthUser | null {
@@ -223,13 +207,14 @@ function MobileNavLink({
   )
 }
 
+const STORE_EVENT = "STORE_UPDATE"
+
 export function Header() {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const [language, setLanguage] = React.useState("en")
   const [location, setLocation] = React.useState("")
-  const [isAuthDialogOpen, setIsAuthDialogOpen] = React.useState(false)
   const [isSearchDialogOpen, setIsSearchDialogOpen] = React.useState(false)
   const [isFavouritesOpen, setIsFavouritesOpen] = React.useState(false)
   const [isCartOpen, setIsCartOpen] = React.useState(false)
@@ -257,9 +242,14 @@ export function Header() {
       setCategoriesLoading(true)
       setCategoriesError(null)
       try {
-        const res = await api.get<Category[]>("/categories")
+        const res = await api.get<PaginatedResponse<Category>>("/categories")
         if (cancelled) return
-        setCategories(Array.isArray(res.data) ? res.data : [])
+        
+        const data = res.data && "data" in res.data 
+          ? res.data.data 
+          : (Array.isArray(res.data) ? res.data : [])
+          
+        setCategories(data)
       } catch (e: unknown) {
         if (cancelled) return
         setCategories([])
@@ -282,9 +272,14 @@ export function Header() {
       setBrandsLoading(true)
       setBrandsError(null)
       try {
-        const res = await api.get<Brand[]>("/brands")
+        const res = await api.get<PaginatedResponse<Brand>>("/brands")
         if (cancelled) return
-        setBrands(Array.isArray(res.data) ? res.data : [])
+        
+        const data = res.data && "data" in res.data 
+          ? res.data.data 
+          : (Array.isArray(res.data) ? res.data : [])
+          
+        setBrands(data)
       } catch (e: unknown) {
         if (cancelled) return
         setBrands([])
@@ -316,6 +311,13 @@ export function Header() {
       try {
         const user = normalizeAuthUser(JSON.parse(userRaw))
         setAuthUser(user)
+        syncFavoritesWithServer()
+        syncCartWithServer()
+
+        // Auto-heal session for middleware: set cookie if missing
+        if (!document.cookie.includes("auth_token=")) {
+          document.cookie = `auth_token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+        }
       } catch {
         setAuthUser(null)
       }
@@ -335,6 +337,8 @@ export function Header() {
         if (user) {
           localStorage.setItem("user_data", JSON.stringify(rawProfile))
           setAuthUser(user)
+          syncFavoritesWithServer()
+          syncCartWithServer()
         }
       } catch {
         // Ignore network/auth errors; header will fall back to localStorage.
@@ -342,23 +346,10 @@ export function Header() {
     })()
   }, [])
 
-  // Re-check auth when dialog closes (in case user just logged in)
-  const handleCloseAuthDialog = () => {
-    setIsAuthDialogOpen(false)
-    const token = localStorage.getItem("auth_token")
-    const userRaw = localStorage.getItem("user_data")
-    if (token && userRaw) {
-      try {
-        setAuthUser(normalizeAuthUser(JSON.parse(userRaw)))
-      } catch {
-        setAuthUser(null)
-      }
-    }
-  }
-
   const handleLogout = () => {
     localStorage.removeItem("auth_token")
     localStorage.removeItem("user_data")
+    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
     setAuthUser(null)
     router.push("/")
   }
@@ -466,7 +457,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full relative hidden md:block"
+                className="rounded-full relative"
                 aria-label="Favourites"
                 onClick={() => setIsFavouritesOpen(true)}
               >
@@ -481,7 +472,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full relative hidden md:block"
+                className="rounded-full relative"
                 aria-label="Cart"
                 onClick={() => setIsCartOpen(true)}
               >
@@ -540,7 +531,7 @@ export function Header() {
                     size="icon"
                     className="rounded-full"
                     aria-label="Account"
-                    onClick={() => setIsAuthDialogOpen(true)}
+                    onClick={() => router.push("/auth/login")}
                   >
                     <User className="h-5 w-5" />
                   </Button>
@@ -727,7 +718,7 @@ export function Header() {
                 {!authUser && (
                   <button
                     className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
-                    onClick={() => { setIsAuthDialogOpen(true); closeSidebar() }}
+                    onClick={() => { router.push("/auth/login"); closeSidebar() }}
                   >
                     Sign In
                   </button>
@@ -825,7 +816,7 @@ export function Header() {
 		                        <NavigationMenuLink asChild key={c.id}>
 		                          <Link
 		                            href={`/category/${c.id}`}
-		                            className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary"
+		                            className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50"
 		                          >
 		                            <div className="flex items-center gap-2">
 		                              {c.avatar ? (
@@ -849,7 +840,7 @@ export function Header() {
 		                      <NavigationMenuLink asChild>
 		                        <Link
 		                          href="/categories"
-		                          className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary"
+		                          className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50"
 		                        >
 		                          <div className="text-sm font-medium leading-none">View all</div>
 		                        </Link>
@@ -892,7 +883,7 @@ export function Header() {
                            
 	                          <Link
 	                            href={`/brands/${b.id}`}
-	                            className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary"
+	                            className="group block select-none rounded-md p-3 no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50"
 	                          >
 	                            <div className="flex items-center gap-2">
 	                              {b.avatar ? (
@@ -916,7 +907,7 @@ export function Header() {
 	                      <NavigationMenuLink asChild>
 	                        <Link
 	                          href="/brands"
-	                          className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50 hover:text-primary"
+	                          className="group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:text-primary hover:bg-primary-50"
 	                        >
 	                          <div className="text-sm font-medium leading-none">View all</div>
 	                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
@@ -956,9 +947,6 @@ export function Header() {
           </NavigationMenu>
         </div>
       </nav>
-
-      {/* Authentication Dialog */}
-      <AuthDialog isOpen={isAuthDialogOpen} onClose={handleCloseAuthDialog} />
 
       {/* Search Dialog */}
       <SearchDialog

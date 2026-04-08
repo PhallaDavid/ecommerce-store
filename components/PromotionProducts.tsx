@@ -2,8 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Heart, ShoppingCart } from "lucide-react"
-
 import {
   Carousel,
   CarouselContent,
@@ -11,10 +9,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel"
-import { Button } from "@/components/ui/button"
 import api from "@/utils/axios"
 import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
-import { formatPrice } from "@/lib/utils"
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
 import { Product, PaginatedResponse } from "@/types/api"
 
@@ -38,8 +34,7 @@ function toNumber(value: unknown): number | null {
   return null
 }
 
-
-export function NewArrivalsProducts() {
+export function PromotionProducts() {
   const [products, setProducts] = React.useState<ProductCardProps[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -51,16 +46,14 @@ export function NewArrivalsProducts() {
       setIsLoading(true)
       setError(null)
       try {
-        const res = await api.get<PaginatedResponse<Product>>("/products")
+        const res = await api.get<PaginatedResponse<Product>>("/products/promotions?page=1&limit=12")
         
-        // Handle both paginated and non-paginated (legacy) responses
         const data = res.data && "data" in res.data 
           ? res.data.data 
           : (Array.isArray(res.data) ? res.data : [])
 
         const mapped: ProductCardProps[] = data
           .filter((p) => (p.status ? p.status === "active" : true))
-          .slice(0, 12)
           .map((p) => {
             const id = String(p.id)
             const original = toNumber(p.original_price)
@@ -89,7 +82,7 @@ export function NewArrivalsProducts() {
       } catch (e: unknown) {
         if (cancelled) return
         setProducts([])
-        setError(e instanceof Error ? e.message : "Failed to load products")
+        setError(e instanceof Error ? e.message : "Failed to load promotions")
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -107,15 +100,17 @@ export function NewArrivalsProducts() {
     })
   }, [products])
 
+  if (!isLoading && products.length === 0) return null
+
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="text-base font-semibold tracking-tight">New Arrivals</h2>
+        <h2 className="text-base font-semibold tracking-tight text-red-600">Flash Sale</h2>
         <Link
-          href="/?sort=new"
+          href="/products"
           className="text-sm font-medium text-muted-foreground hover:text-primary hover:underline transition-colors"
         >
-          Shop Now
+          View All
         </Link>
       </div>
 
