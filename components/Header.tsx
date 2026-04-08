@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input"
 import { SearchDialog } from "@/components/search-dialog"
 import { CartSheet } from "@/components/CartSheet"
 import { FavouritesSheet } from "@/components/FavouritesSheet"
-import { getCart, getFavourites, subscribeStore, syncFavoritesWithServer, syncCartWithServer } from "@/lib/store"
+import { getCart, getFavourites, subscribeStore, syncFavoritesWithServer, syncCartWithServer, fixImageUrl } from "@/lib/store"
 import api from "@/utils/axios"
 import { Category, Brand, PaginatedResponse } from "@/types/api"
 import { useLanguage, Language } from "@/components/LanguageProvider"
@@ -239,10 +239,19 @@ export function Header() {
   const [brandsLoading, setBrandsLoading] = React.useState(false)
   const [brandsError, setBrandsError] = React.useState<string | null>(null)
 
-  // Hydration safety: ensure sidebar is closed on mount
+  // Hydration safety: ensure sidebar is closed on mount and subscribe to store updates
   React.useEffect(() => {
     setMounted(true)
     setMobileMenuOpen(false)
+
+    // Sync counts with store
+    const updateCounts = () => {
+      setFavCount(getFavourites().length)
+      setCartCount(getCart().reduce((sum, item) => sum + item.qty, 0))
+    }
+
+    updateCounts() // Initial update
+    return subscribeStore(updateCounts)
   }, [])
 
   // Load initial data (Categories, Brands, Profile) in parallel for performance
@@ -269,7 +278,8 @@ export function Header() {
       // Handle Categories
       if (results[0].status === "fulfilled") {
         const res = results[0].value
-        const data = res.data && "data" in res.data ? res.data.data : (Array.isArray(res.data) ? res.data : [])
+        const rawData = res.data && "data" in res.data ? res.data.data : (Array.isArray(res.data) ? res.data : [])
+        const data = rawData.map((c: any) => ({ ...c, avatar: fixImageUrl(c.avatar) }))
         setCategories(data)
       } else {
         setCategoriesError("Failed to load categories")
@@ -279,7 +289,8 @@ export function Header() {
       // Handle Brands
       if (results[1].status === "fulfilled") {
         const res = results[1].value
-        const data = res.data && "data" in res.data ? res.data.data : (Array.isArray(res.data) ? res.data : [])
+        const rawData = res.data && "data" in res.data ? res.data.data : (Array.isArray(res.data) ? res.data : [])
+        const data = rawData.map((b: any) => ({ ...b, avatar: fixImageUrl(b.avatar) }))
         setBrands(data)
       } else {
         setBrandsError("Failed to load brands")
@@ -346,7 +357,7 @@ export function Header() {
   return (
     <>
       {/* Language and Location Bar */}
-      <div className="bg-background text-white text-xs h-9 flex items-center">
+      <div className="bg-background  text-xs h-9 flex items-center">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-9 text-sm">
             <div className="flex items-center space-x-4">
@@ -364,7 +375,7 @@ export function Header() {
                   <SelectItem value="kh">
                     <div className="flex items-center gap-2">
                       <CambodiaFlag />
-                      <span>ខ្មែរ (Khmer)</span>
+                      <span>Khmer</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -401,7 +412,7 @@ export function Header() {
                 <Input
                   type="search"
                   placeholder={t("nav.search")}
-                  className="pl-10 pr-4 py-2 w-full rounded-md cursor-pointer h-10 border-muted-foreground/20 focus-visible:ring-primary"
+                  className="pl-10 pr-4 py-2 w-full rounded-md cursor-pointer h-10 border-muted bg-transparent dark:bg-transparent focus-visible:ring-1"
                   onClick={() => setIsSearchDialogOpen(true)}
                   readOnly
                 />

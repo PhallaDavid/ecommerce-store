@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
 import api from "@/utils/axios"
-import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
+import { subscribeStore, getFavourites, isFavourite, fixImageUrl } from "@/lib/store"
 import { formatPrice } from "@/lib/utils"
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
 import { Product, PaginatedResponse } from "@/types/api"
@@ -81,7 +81,7 @@ export function NewCollection() {
               id,
               name: p.name,
               href: `/products/${id}`,
-              image: p.thumbnail || FALLBACK_IMG,
+              image: fixImageUrl(p.thumbnail),
               price: current,
               compareAt,
             }

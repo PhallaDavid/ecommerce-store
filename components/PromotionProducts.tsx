@@ -10,7 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import api from "@/utils/axios"
-import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
+import { subscribeStore, getFavourites, isFavourite, fixImageUrl } from "@/lib/store"
 import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
 import { Product, PaginatedResponse } from "@/types/api"
 import { useLanguage } from "@/components/LanguageProvider"
@@ -74,7 +74,7 @@ export function PromotionProducts() {
               id,
               name: p.name,
               href: `/products/${id}`,
-              image: p.thumbnail || FALLBACK_IMG,
+              image: fixImageUrl(p.thumbnail),
               price: current,
               compareAt,
             }

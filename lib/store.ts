@@ -44,6 +44,17 @@ function emitStoreUpdate() {
   window.dispatchEvent(new Event(STORE_EVENT))
 }
 
+/**
+ * Fix potential double URL mess: http://rakiestore.onrender.comhttps://res.cloudinary.com/...
+ */
+export function fixImageUrl(url?: string | null): string {
+  if (!url) return "/images/STU_8189-cr-450x672.jpg"
+  if (url.includes("http") && url.lastIndexOf("http") > 0) {
+    return url.slice(url.lastIndexOf("http"))
+  }
+  return url
+}
+
 export function subscribeStore(callback: () => void) {
   if (typeof window === "undefined") return () => {}
 
@@ -83,7 +94,7 @@ export async function syncFavoritesWithServer() {
       id: String(f.id),
       name: f.name,
       href: `/products/${f.id}`,
-      image: f.thumbnail || "/images/STU_8189-cr-450x672.jpg",
+      image: fixImageUrl(f.thumbnail || f.image),
       price: typeof f.current_price === "number" ? f.current_price : Number(f.promo_price || f.original_price || 0),
       compareAt: f.original_price ? Number(f.original_price) : undefined
     }))
@@ -104,19 +115,13 @@ export async function syncCartWithServer() {
     const serverCart = Array.isArray(res.data) ? res.data : []
     
     const mapped: CartItem[] = serverCart.map((it: any) => {
-      // Fix potential double URL mess: http://rakiestore.onrender.comhttps://res.cloudinary.com/...
-      let thumb = it.thumbnail || ""
-      if (thumb.includes("http") && thumb.lastIndexOf("http") > 0) {
-        thumb = thumb.slice(thumb.lastIndexOf("http"))
-      }
-
       return {
         id: String(it.product_id),
         cart_id: it.id,
         variant_id: it.variant_id,
         name: it.name || it.product_name || "Product",
         href: `/products/${it.product_id}`,
-        image: thumb || "/images/STU_8189-cr-450x672.jpg",
+        image: fixImageUrl(it.thumbnail || it.image),
         price: Number(it.promo_price || it.original_price || it.price || 0),
         qty: it.quantity
       }

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import { X } from "lucide-react"
 import api from "@/utils/axios"
+import { fixImageUrl } from "@/lib/store"
 
 type ApiSearchProduct = {
   id: number
@@ -113,7 +114,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
                 placeholder="Search ..."
                 value={searchQuery}
                 onChange={(e) => onSearchQueryChange(e.target.value)}
-                className="pl-10 pr-4 rounded-md py-2 w-full text-lg"
+                className="pl-10 pr-4 rounded-md py-2 w-full text-lg bg-transparent dark:bg-transparent border-muted focus-visible:ring-1"
                 autoFocus
               />
             </div>
@@ -210,7 +211,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
                       >
                         <div className="relative aspect-square bg-muted rounded mb-3 overflow-hidden">
                           <Image
-                            src={p.thumbnail || FALLBACK_IMG}
+                            src={fixImageUrl(p.thumbnail)}
                             alt={p.name}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

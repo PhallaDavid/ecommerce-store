@@ -19,6 +19,7 @@ import { useState, useEffect, useRef } from "react";
 import { Category, Banner, PaginatedResponse } from "@/types/api";
 
 import { useLanguage } from "@/components/LanguageProvider";
+import { fixImageUrl } from "@/lib/store";
 
 function useCarouselDots(slidesLength: number) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -65,7 +66,7 @@ export default function Home() {
         const res = await api.get<Banner[]>("/banners");
         if (cancelled) return;
         const list = Array.isArray(res.data) ? res.data : [];
-        setBanners(list.filter((b) => b.status === "active"));
+        setBanners(list.filter((b) => b.status === "active").map(b => ({ ...b, image: fixImageUrl(b.image) })));
       } catch (e: unknown) {
         if (cancelled) return;
         setBanners([]);
@@ -89,10 +90,11 @@ export default function Home() {
         if (cancelled) return;
 
         // Handle both paginated and non-paginated (legacy) responses
-        const data = res.data && "data" in res.data 
+        const rawData = res.data && "data" in res.data 
           ? res.data.data 
           : (Array.isArray(res.data) ? res.data : [])
 
+        const data = rawData.map((c: any) => ({ ...c, avatar: fixImageUrl(c.avatar) }))
         setTopCategories(data.slice(0, 12));
       } catch (e: unknown) {
         if (cancelled) return;

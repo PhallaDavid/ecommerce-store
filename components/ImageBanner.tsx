@@ -4,6 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import api from "@/utils/axios"
 import { Banner, PaginatedResponse } from "@/types/api"
+import { fixImageUrl } from "@/lib/store"
 import { cn } from "@/lib/utils"
 
 export function ImageBanners() {
@@ -20,10 +21,11 @@ export function ImageBanners() {
         const res = await api.get<PaginatedResponse<Banner>>("/posters")
         if (cancelled) return
         
-        const data = res.data && "data" in res.data 
+        const rawData = res.data && "data" in res.data 
           ? res.data.data 
           : (Array.isArray(res.data) ? res.data : [])
           
+        const data = rawData.map(p => ({ ...p, image: fixImageUrl(p.image) }))
         setPosters(data.filter(p => p.status === "active"))
       } catch (e: unknown) {
         if (cancelled) return
@@ -67,7 +69,7 @@ export function ImageBanners() {
       {pairs.map((pair, idx) => (
         <div key={idx} className="flex w-full gap-4">
           {pair.map((poster) => (
-            <div key={poster.id} className={cn("relative overflow-hidden rounded-md", pair.length === 1 ? "w-full aspect-21/9" : "w-1/2 aspect-16/10")}>
+            <div key={poster.id} className={cn("relative overflow-hidden rounded-md", pair.length === 1 ? "w-full aspect-21/9" : "w-1/2 aspect-4/5")}>
               <Image
                 src={poster.image}
                 alt={poster.title || "Promotion Banner"}
