@@ -13,7 +13,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from 
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = React.useState(false)
@@ -193,5 +193,20 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex min-h-svh flex-col items-center justify-center bg-muted/30 p-6 md:p-10">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-sm font-medium">Loading...</span>
+        </div>
+      </div>
+    }>
+      <LoginFormContent />
+    </React.Suspense>
   )
 }
