@@ -7,8 +7,9 @@ import { ChevronRight, Heart, Loader2, Search, ShoppingCart } from "lucide-react
 import api from "@/utils/axios"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { addToCart, getFavourites, isFavourite, subscribeStore, toggleFavourite } from "@/lib/store"
+import { cn, formatPrice } from "@/lib/utils"
+import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
+import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
 
 type ApiProduct = {
   id: number
@@ -44,13 +45,6 @@ function toNumber(value: unknown): number | null {
   return null
 }
 
-function formatPrice(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 
 export default function ProductsPage() {
   const [products, setProducts] = React.useState<ProductCard[]>([])
@@ -164,9 +158,10 @@ export default function ProductsPage() {
         ) : null}
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Loading products
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={`skeleton-${i}`} />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-md border bg-card p-6 text-center text-sm text-muted-foreground">
@@ -174,99 +169,9 @@ export default function ProductsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {filtered.map((p) => {
-              const discountPercent =
-                p.compareAt && p.compareAt > p.price
-                  ? Math.round(((p.compareAt - p.price) / p.compareAt) * 100)
-                  : 0
-
-              return (
-                <Link
-                  key={p.id}
-                  href={p.href}
-                  className="group overflow-hidden rounded-md border bg-card hover:bg-muted/30 transition-colors"
-                >
-                  <div className="relative">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                    </div>
-
-                    {discountPercent > 0 ? (
-                      <span className="absolute left-3 top-3 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-                        -{discountPercent}%
-                      </span>
-                    ) : null}
-
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon-sm"
-                      className="absolute right-3 top-3 rounded-full bg-background/85 backdrop-blur border hover:bg-background"
-                      aria-label="Add to wishlist"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        toggleFavourite({
-                          id: p.id,
-                          name: p.name,
-                          href: p.href,
-                          image: p.image,
-                          price: p.price,
-                          compareAt: p.compareAt,
-                        })
-                        setFavs((prev) => ({ ...prev, [p.id]: !prev[p.id] }))
-                      }}
-                    >
-                      <Heart className={cn("h-4 w-4", favs[p.id] ? "fill-primary text-primary" : "")} />
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon-sm"
-                      className="absolute right-3 top-14 rounded-full bg-background/85 backdrop-blur border hover:bg-background"
-                      aria-label="Add to cart"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        addToCart(
-                          { id: p.id, name: p.name, href: p.href, image: p.image, price: p.price },
-                          1
-                        )
-                        setAdded((prev) => ({ ...prev, [p.id]: true }))
-                        setTimeout(() => {
-                          setAdded((prev) => ({ ...prev, [p.id]: false }))
-                        }, 800)
-                      }}
-                    >
-                      {added[p.id] ? (
-                        <span className="text-xs font-semibold text-primary">✓</span>
-                      ) : (
-                        <ShoppingCart className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="p-3">
-                    <div className="truncate text-sm font-semibold">{p.name}</div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-primary">
-                        {formatPrice(p.price)}
-                      </span>
-                      {p.compareAt ? (
-                        <span className="text-xs text-muted-foreground line-through">
-                          {formatPrice(p.compareAt)}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+            {filtered.map((p) => (
+              <ProductCard key={p.id} {...p} />
+            ))}
           </div>
         )}
       </div>

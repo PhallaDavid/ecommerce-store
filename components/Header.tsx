@@ -218,7 +218,6 @@ function MobileNavLink({
         onClick()
       }}
     >
-      <ChevronRight className="h-3 w-3 shrink-0" />
       {children}
     </button>
   )
@@ -672,7 +671,20 @@ export function Header() {
                 ) : null}
                 {navBrands.map((b) => (
                   <MobileNavLink key={b.id} href={`/brands/${b.id}`} onClick={closeSidebar}>
-                    {b.name}
+                    <span className="flex items-center gap-2 min-w-0">
+                      {b.avatar ? (
+                        <img
+                          src={b.avatar}
+                          alt={b.name}
+                          className="h-7 w-7 rounded-md object-cover bg-muted shrink-0"
+                        />
+                      ) : (
+                        <span className="h-7 w-7 rounded-md bg-muted flex items-center justify-center text-[11px] font-semibold text-muted-foreground shrink-0">
+                          {b.name.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="truncate">{b.name}</span>
+                    </span>
                   </MobileNavLink>
                 ))}
                 <MobileNavLink href="/brands" onClick={closeSidebar}>
@@ -712,12 +724,14 @@ export function Header() {
                 >
                   Contact
                 </button>
-                <button
-                      className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
-                      onClick={() => { setIsAuthDialogOpen(true); closeSidebar() }}
-                    >
-                      Sign In
-                    </button>
+                {!authUser && (
+                  <button
+                    className="flex items-center gap-2 w-full px-3 py-3 text-sm font-medium hover:text-primary hover:bg-primary-50 transition-colors"
+                    onClick={() => { setIsAuthDialogOpen(true); closeSidebar() }}
+                  >
+                    Sign In
+                  </button>
+                )}
               </div>
 
               {/* ── Account section ── */}

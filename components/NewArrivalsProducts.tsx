@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
 import api from "@/utils/axios"
-import { addToCart, getFavourites, isFavourite, subscribeStore, toggleFavourite } from "@/lib/store"
+import { subscribeStore, getFavourites, isFavourite } from "@/lib/store"
+import { formatPrice } from "@/lib/utils"
+import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
 
 type ApiProduct = {
   id: number
@@ -47,13 +49,6 @@ function toNumber(value: unknown): number | null {
   return null
 }
 
-function formatPrice(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 
 export function NewArrivalsProducts() {
   const [products, setProducts] = React.useState<ProductCard[]>([])
@@ -147,115 +142,19 @@ export function NewArrivalsProducts() {
                   key={`skeleton-${i}`}
                   className="basis-1/2 sm:basis-1/3 lg:basis-1/4"
                 >
-                  <div className="overflow-hidden rounded-md bg-card">
-                    <div className="aspect-[3/4] bg-muted animate-pulse" />
-                    <div className="p-3 space-y-2">
-                      <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
-                      <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
-                    </div>
-                  </div>
+                  <ProductCardSkeleton />
                 </CarouselItem>
               ))
             : null}
 
-          {products.map((product) => {
-            const discountPercent =
-              product.compareAt && product.compareAt > product.price
-                ? Math.round(
-                    ((product.compareAt - product.price) / product.compareAt) * 100
-                  )
-                : 0
-
-            return (
-              <CarouselItem
-                key={product.id}
-                className="basis-1/2 sm:basis-1/3 lg:basis-1/4"
-              >
-                <Link
-                  href={product.href}
-                  className="group block overflow-hidden rounded-md bg-card transition-colors"
-                >
-                  <div className="relative">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="h-full w-full object-cover rounded-md transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                    </div>
-
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon-sm"
-                    className="absolute right-3 top-3 rounded-full bg-background/85 backdrop-blur border cursor-pointer hover:bg-background"
-                    aria-label="Add to wishlist"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      toggleFavourite({
-                        id: product.id,
-                        name: product.name,
-                        href: product.href,
-                        image: product.image,
-                        price: product.price,
-                        compareAt: product.compareAt,
-                      })
-                      setFavs((prev) => ({ ...prev, [product.id]: !prev[product.id] }))
-                    }}
-                  >
-                    <Heart className={favs[product.id] ? "h-4 w-4 fill-primary text-primary" : "h-4 w-4"} />
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon-sm"
-                    className="absolute right-3 top-14 rounded-full bg-background/85 backdrop-blur border cursor-pointer hover:bg-background"
-                    aria-label="Add to cart"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      addToCart(
-                        {
-                          id: product.id,
-                          name: product.name,
-                          href: product.href,
-                          image: product.image,
-                          price: product.price,
-                        },
-                        1
-                      )
-                    }}
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                  <div className="p-3">
-                    <div className="truncate text-sm font-semibold">{product.name}</div>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-primary">
-                          {formatPrice(product.price)}
-                        </span>
-                        {discountPercent > 0 ? (
-                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                            -{discountPercent}%
-                          </span>
-                        ) : null}
-                        {product.compareAt ? (
-                          <span className="text-xs text-muted-foreground line-through">
-                            {formatPrice(product.compareAt)}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </CarouselItem>
-            )
-          })}
+          {products.map((product) => (
+            <CarouselItem
+              key={product.id}
+              className="basis-1/2 sm:basis-1/3 lg:basis-1/4"
+            >
+              <ProductCard {...product} />
+            </CarouselItem>
+          ))}
         </CarouselContent>
 
         <CarouselPrevious className="hidden md:inline-flex -left-6" />

@@ -9,28 +9,28 @@ export function PromoPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [countdown, setCountdown] = useState(10);
 
-  useEffect(() => {
-    const hasSeen = sessionStorage.getItem("promo-seen");
-    const timer = setTimeout(() => {
-      if (!hasSeen) {
-        setIsOpen(true);
-        sessionStorage.setItem("promo-seen", "true");
+  // useEffect(() => {
+  //   const hasSeen = sessionStorage.getItem("promo-seen");
+  //   const timer = setTimeout(() => {
+  //     if (!hasSeen) {
+  //       setIsOpen(true);
+  //       sessionStorage.setItem("promo-seen", "true");
         
-        const interval = setInterval(() => {
-          setCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(interval);
-              setIsOpen(false);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      }
-    }, 1000);
+  //       const interval = setInterval(() => {
+  //         setCountdown((prev) => {
+  //           if (prev <= 1) {
+  //             clearInterval(interval);
+  //             setIsOpen(false);
+  //             return 0;
+  //           }
+  //           return prev - 1;
+  //         });
+  //       }, 1000);
+  //     }
+  //   }, 1000);
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
   if (!isOpen) return null;
 

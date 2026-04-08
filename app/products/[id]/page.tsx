@@ -339,7 +339,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       <style>{`
         /* ── Thumb swiper ── */
         .thumb-swiper .swiper-slide { opacity: .55; cursor: pointer; border-radius: 8px; overflow: hidden; border: 2px solid transparent; transition: opacity .2s, border-color .2s; }
-        .thumb-swiper .swiper-slide-thumb-active { opacity: 1; border-color: hsl(var(--primary)); }
+        .thumb-swiper .swiper-slide-thumb-active { opacity: 1; border-color: var(--primary); }
         /* hide Swiper's own nav everywhere since we use custom buttons */
         .swiper-button-prev, .swiper-button-next { display: none !important; }
       `}</style>
@@ -534,7 +534,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <div className="flex gap-4">
                 <Button
                   size="lg"
-                  className="flex-1 bg-black hover:bg-black h-10 text-lg"
+                  className="flex-1 bg-primary hover:bg-primary/90 h-10 text-lg"
 	                  onClick={() => {
 	                    addToCart(
 	                      {
