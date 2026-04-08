@@ -78,7 +78,7 @@ export function TopBrands() {
                   key={i}
                   className="basis-1/3 sm:basis-1/4 md:basis-1/6"
                 >
-                  <div className="flex w-full p-2 flex-col items-center rounded-md bg-card">
+                  <div className="flex w-full p-2 flex-col items-center rounded-full bg-card">
                     <div className="relative aspect-square w-full overflow-hidden rounded-md bg-muted animate-pulse" />
                     <div className="mt-2 h-3 w-2/3 rounded bg-muted animate-pulse mx-auto" />
                   </div>
@@ -91,7 +91,7 @@ export function TopBrands() {
                 >
                   <Link
                     href={`/brands/${brand.id}`}
-                    className="group flex w-full p-2 flex-col items-center rounded-md bg-card transition-colors hover:bg-muted/30"
+                    className="group flex w-full p-2 flex-col items-center rounded-full bg-card transition-colors hover:bg-muted/30"
                     aria-label={brand.name}
                   >
                     <div className="flex w-full aspect-square items-center justify-center rounded-md bg-muted overflow-hidden border">

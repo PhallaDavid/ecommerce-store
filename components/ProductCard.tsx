@@ -47,7 +47,7 @@ export function ProductCard({
       : 0
 
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-xl border bg-card transition-all duration-300 hover:shadow-lg">
+    <div className="group relative flex flex-col overflow-hidden rounded-md border bg-card transition-all duration-300 ">
       <Link href={href} className={cn("relative block aspect-4/5 overflow-hidden", className)}>
         <Image
           src={image}

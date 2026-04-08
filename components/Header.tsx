@@ -357,7 +357,7 @@ export function Header() {
   return (
     <>
       {/* Language and Location Bar */}
-      <div className="bg-background  text-xs h-9 flex items-center">
+      <div className="bg-primary text-xs h-9 flex items-center">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-9 text-sm">
             <div className="flex items-center space-x-4">
@@ -368,14 +368,14 @@ export function Header() {
                 <SelectContent>
                   <SelectItem value="en">
                     <div className="flex items-center gap-2">
-                      <USFlag />
+<img  className="w-6 h-4 rounded" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAACuCAMAAAClZfCTAAAAFVBMVEX////IEC7FABnrtLvst7/GACPdfoqgTXQ1AAABiUlEQVR4nO3asQ3DMBAEQVqk1H/JdgcTPgTvVHDY+Naata8PXHt44rQSUYmoRFQiKhGViEpEJaISUYmoRFQiKhGViEpEJaISUYmoRFQiKhGViEpEJaISUYmoRFQiKhGViEpEJaISUYmoRFQiKhGViEpEJaISUYmoRFQiKhGViEpEJaISUYmoRFQiKhGViEpEJaISUYmoRFQiKhGViEpEJaISUYmoRHSc6Exv3KPOcyvR/ZzZjeuaxUK/RsMTlyf+uxJRiahEVCIqEZWISkQlohJRiahEVCIqEZWISkQlohJRiahEVCIqEZWISkQlohJRiahEVCIqEZWISkRdsKgjH01fLd9wBx3WqZhKRCWiElGJqERUIioRlYhKRCWiElGJqERUIioRlYhKRCWiElGJqERUIioRlYhKRCWiElGJqERUIioRlYhKRCWiElGJqERUIioRlYhKRCWiElGJqERUIioRlYhKRCWiElGJqERUIioRlYhKRCWiElGJqERUIioRlYhKRCWiFyT6AlXQRZ39U6PdAAAAAElFTkSuQmCC" alt="" />
                       <span>English</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="kh">
                     <div className="flex items-center gap-2">
-                      <CambodiaFlag />
-                      <span>Khmer</span>
+                      <img className="w-6 rounded h-4" src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Flag_of_Cambodia.svg/960px-Flag_of_Cambodia.svg.png" alt="" />
+                      <span>Cambodia</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
