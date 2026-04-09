@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import TopLoader from "@/components/TopLoader"
 import { PromoPopup } from "@/components/PromoPopup";
+import NotificationHandler from "@/components/NotificationHandler";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -69,6 +70,7 @@ export default function RootLayout({
             <OfflineDetector />
             <TopLoader />
             <PromoPopup />
+            <NotificationHandler />
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
