@@ -6,6 +6,8 @@ import { NewCollection } from "@/components/NewCollection";
 import { ImageBanners } from "@/components/ImageBanner";
 import { PromotionProducts } from "@/components/PromotionProducts";
 import { TopBrands } from "@/components/TopBrands";
+import Router from "next/router";
+import { Faqs } from "@/components/Faqs";
 import {
   Carousel,
   CarouselContent,
@@ -188,12 +190,15 @@ export default function Home() {
                                 {banner.description}
                               </p>
                             ) : null}
+                            <Link href="/products">
                             <Button
                               className="mt-3 bg-primary text-white hover:bg-primary-50/90 transition-transform hover:scale-105 animate-in slide-in-from-bottom-4 duration-700 delay-200"
                               size="lg"
+                             
                             >
                               {t("home.shopNow")}
                             </Button>
+                            </Link>
                           </div>
                         </div>
 
@@ -275,7 +280,7 @@ export default function Home() {
 	                      className="basis-1/2 sm:basis-1/3  md:basis-1/6"
 	                    >
 	                      <Link
-	                        href={`/category/${cat.id}`}
+	                        href={`/products/category/${cat.id}`}
 	                        className="group flex w-full p-2 flex-col items-center rounded-md bg-card transition-colors"
 	                        aria-label={cat.name}
 	                      >
@@ -312,6 +317,8 @@ export default function Home() {
         <NewArrivalsProducts />
         <ImageBanners />
         <NewCollection />
+
+        <Faqs />
 
       </div>
     </div>

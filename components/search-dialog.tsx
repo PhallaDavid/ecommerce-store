@@ -36,6 +36,8 @@ function formatPrice(value: number) {
   }).format(value)
 }
 
+import { useLanguage } from "@/components/LanguageProvider"
+
 interface SearchDialogProps {
   isOpen: boolean
   onClose: () => void
@@ -44,6 +46,7 @@ interface SearchDialogProps {
 }
 
 export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange }: SearchDialogProps) {
+  const { t, language } = useLanguage()
   const [results, setResults] = React.useState<ApiSearchProduct[]>([])
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -81,7 +84,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
         // ignore aborts
         if (controller.signal.aborted) return
         setResults([])
-        setError(e instanceof Error ? e.message : "Search failed")
+        setError(e instanceof Error ? e.message : t("common.error"))
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
       }
@@ -91,7 +94,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
       controller.abort()
       window.clearTimeout(timeout)
     }
-  }, [isOpen, searchQuery])
+  }, [isOpen, searchQuery, t])
 
   return (
     <div
@@ -111,7 +114,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
               </svg>
               <Input
                 type="search"
-                placeholder="Search ..."
+                placeholder={t("nav.search")}
                 value={searchQuery}
                 onChange={(e) => onSearchQueryChange(e.target.value)}
                 className="pl-10 pr-4 rounded-md py-2 w-full text-lg bg-transparent dark:bg-transparent border-muted focus-visible:ring-1"
@@ -152,12 +155,12 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                <span>Upload Image</span>
+                <span className="font-semibold">{t("search.upload")}</span>
               </label>
             </div>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Search by image to find similar products
+            {t("search.imageDesc")}
           </p>
         </div>
       </div>
@@ -168,7 +171,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
           {searchQuery ? (
             <div>
               <p className="text-sm text-muted-foreground mb-4">
-                Search results for: <span className="font-medium">{searchQuery}</span>
+                {language === "kh" ? "លទ្ធផលស្វែងរកសម្រាប់៖" : "Search results for:"} <span className="font-medium">{searchQuery}</span>
               </p>
               {error ? (
                 <div className="mb-4 rounded-md border bg-card p-3 text-sm text-destructive">
@@ -187,8 +190,8 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
                   ))}
                 </div>
               ) : results.length === 0 ? (
-                <div className="rounded-md border bg-card p-6 text-center text-sm text-muted-foreground">
-                  No products found.
+                <div className="rounded-md border bg-card p-6 text-center text-sm text-muted-foreground font-medium">
+                  {t("common.noProductsFound")}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -219,7 +222,7 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
                           />
                         </div>
                         <h3 className="font-medium line-clamp-1">{p.name}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground mt-1 font-bold">
                           {formatPrice(current)}
                         </p>
                       </a>
@@ -233,8 +236,8 @@ export function SearchDialog({ isOpen, onClose, searchQuery, onSearchQueryChange
               <svg className="h-12 w-12 mx-auto text-muted-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <h2 className="text-xl font-bold mb-2">Search for products</h2>
-              <p className="text-muted-foreground">Enter a search term or upload an image to find products</p>
+              <h2 className="text-xl font-bold mb-2">{t("search.title")}</h2>
+              <p className="text-muted-foreground">{t("search.instruction")}</p>
             </div>
           )}
         </div>

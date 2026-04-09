@@ -40,17 +40,17 @@ export function LocationPicker({ value, onChange }: Props) {
 
   useEffect(() => {
     if (!mapRef.current || leafletRef.current) return
+    
+    // Safety check: remove existing leaflet ID if container was reused
+    if ((mapRef.current as any)._leaflet_id) {
+        (mapRef.current as any)._leaflet_id = null;
+    }
+    
     setLoading(true)
 
     // Dynamically import Leaflet (client-only)
     import("leaflet").then((L) => {
-      // Fix default icon paths broken by webpack
-      delete (L.Icon.Default.prototype as any)._getIconUrl
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-      })
+      if (!mapRef.current || (mapRef.current as any)._leaflet_id) return
 
       const center = value ?? DEFAULT_CENTER
       const map = L.map(mapRef.current!, { zoomControl: true }).setView(

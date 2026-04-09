@@ -125,6 +125,33 @@ const translations = {
     "checkout.continueToDelivery": "Continue to Delivery",
     "checkout.continueToPayment": "Continue to Payment",
     "checkout.placingOrder": "Placing Order...",
+    "checkout.notePlaceholder": "e.g. Deliver at 5pm",
+    "checkout.contactInfo": "Contact Information",
+    "checkout.phone": "Phone Number",
+    "checkout.orderNote": "Delivery Note (Optional)",
+
+    // Orders
+    "orders.title": "My Orders",
+    "orders.searchPlaceholder": "Search by order ID...",
+    "orders.noOrders": "No orders found",
+    "orders.noOrdersDesc": "You haven't placed any orders yet.",
+    "order.id": "Order ID",
+    "order.date": "Date",
+    "order.total": "Total",
+    "order.items": "Items",
+    "order.itemsCount": "items",
+    "order.viewDetails": "View Details",
+    "order.hideDetails": "Hide Details",
+    "order.reorder": "Reorder",
+    "order.track": "Track",
+    "order.payment": "Payment",
+    "order.deliveryTo": "Delivery to",
+    "order.qty": "Qty",
+    "order.status.pending": "Pending",
+    "order.status.processing": "Processing",
+    "order.status.shipped": "Shipped",
+    "order.status.delivered": "Delivered",
+    "order.status.cancelled": "Cancelled",
 
     // Cart / Sheets
     "cart.title": "Shopping Cart",
@@ -155,6 +182,52 @@ const translations = {
     "footer.social": "Social",
     "footer.paymentMethods": "Payment Methods",
     "footer.allRightsReserved": "All rights reserved.",
+    
+    // Categories & Brands pages
+    "cat.title": "Categories",
+    "cat.description": "Browse by category to find what you want faster.",
+    "cat.searchPlaceholder": "Search in this category...",
+    "cat.noProducts": "No products found",
+    "cat.noProductsDesc": "We couldn't find any products in this category.",
+    "brand.title": "Brands",
+    "brand.description": "Pick a brand to browse products.",
+    "brand.searchPlaceholder": "Search in this brand...",
+    "brand.noProducts": "No products found",
+    "brand.noProductsDesc": "We couldn't find any products for this brand.",
+    "common.productsFound": "products found",
+    "sort.newest": "Newest Arrivals",
+    "sort.oldest": "Oldest First",
+    "sort.priceLow": "Price: Low to High",
+    "sort.priceHigh": "Price: High to Low",
+
+    // Favourites
+    "fav.noFavs": "No favourites yet",
+    "fav.description": "Tap the heart icon on a product to save it.",
+
+    // Image Search
+    "search.upload": "Upload Image",
+    "search.imageDesc": "Search by image to find similar products",
+    "search.title": "Search for products",
+    "search.instruction": "Enter a search term or upload an image to find products",
+
+    // Maintenance
+    "error.maintenanceTitle": "Under Maintenance",
+    "error.maintenanceDesc": "We're currently performing some scheduled maintenance. We'll be back online shortly.",
+    "error.serverDownTitle": "Server Unavailable",
+    "error.serverDownDesc": "We're having trouble connecting to our servers. Please try again later.",
+    "error.refresh": "Refresh Page",
+    "error.noInternetTitle": "No Internet Connection",
+    "error.noInternetDesc": "Please check your network settings and try again.",
+
+    // FAQs
+    "faq.title": "Frequently Asked Questions",
+    "faq.description": "Everything you need to know about our products and services.",
+    "faq.q1": "What are your shipping hours?",
+    "faq.a1": "We deliver from 8:00 AM to 6:00 PM every day.",
+    "faq.q2": "Do you offer cash on delivery?",
+    "faq.a2": "Yes, we support Cash on Delivery (COD) for most areas.",
+    "faq.q3": "How can I track my order?",
+    "faq.a3": "You can check your order status in your profile history.",
   },
   kh: {
     // Header
@@ -270,6 +343,33 @@ const translations = {
     "checkout.continueToDelivery": "បន្តទៅការដឹកជញ្ជូន",
     "checkout.continueToPayment": "បន្តទៅការទូទាត់",
     "checkout.placingOrder": "កំពុងបញ្ជាទិញ...",
+    "checkout.notePlaceholder": "ឧទាហរណ៍៖ ដឹកជញ្ជូននៅម៉ោង ៥ ល្ងាច",
+    "checkout.contactInfo": "ព័ត៌មានទំនាក់ទំនង",
+    "checkout.phone": "លេខទូរស័ព្ទ",
+    "checkout.orderNote": "ចំណាំការដឹកជញ្ជូន (ជម្រើស)",
+
+    // Orders
+    "orders.title": "ការបញ្ជាទិញរបស់ខ្ញុំ",
+    "orders.searchPlaceholder": "ស្វែងរកតាមលេខកូដបញ្ជាទិញ...",
+    "orders.noOrders": "រកមិនឃើញការបញ្ជាទិញទេ",
+    "orders.noOrdersDesc": "អ្នកមិនទាន់បានធ្វើការបញ្ជាទិញនៅឡើយទេ។",
+    "order.id": "លេខកូដបញ្ជាទិញ",
+    "order.date": "កាលបរិច្ឆេទ",
+    "order.total": "សរុប",
+    "order.items": "ទំនិញ",
+    "order.itemsCount": "ទំនិញ",
+    "order.viewDetails": "មើលព័ត៌មានលម្អិត",
+    "order.hideDetails": "លាក់ព័ត៌មានលម្អិត",
+    "order.reorder": "បញ្ជាទិញម្តងទៀត",
+    "order.track": "តាមដាន",
+    "order.payment": "ការទូទាត់",
+    "order.deliveryTo": "ដឹកជញ្ជូនទៅ",
+    "order.qty": "ចំនួន",
+    "order.status.pending": "កំពុងរងចាំ",
+    "order.status.processing": "កំពុងរៀបចំ",
+    "order.status.shipped": "កំពុងដឹកជញ្ជូន",
+    "order.status.delivered": "បានដឹកជញ្ជូន",
+    "order.status.cancelled": "បានបោះបង់",
 
     // Cart / Sheets
     "cart.title": "កន្ត្រកទំនិញ",
@@ -302,6 +402,52 @@ const translations = {
     "footer.social": "បណ្តាញសង្គម",
     "footer.paymentMethods": "វិធីសាស្ត្រទូទាត់",
     "footer.allRightsReserved": "រក្សាសិទ្ធិគ្រប់យ៉ាង។",
+
+    // Categories & Brands pages
+    "cat.title": "ប្រភេទផលិតផល",
+    "cat.description": "ស្វែងរកតាមប្រភេទផលិតផលដើម្បីស្វែងរកអ្វីដែលអ្នកចង់បានកាន់តែរហ័ស។",
+    "cat.searchPlaceholder": "ស្វែងរកក្នុងប្រភេទនេះ...",
+    "cat.noProducts": "រកមិនឃើញផលិតផលទេ",
+    "cat.noProductsDesc": "យើងរកមិនឃើញផលិតផលក្នុងប្រភេទនេះទេ។",
+    "brand.title": "ម៉ាកផលិតផល",
+    "brand.description": "ជ្រើសរើសម៉ាកផលិតផលដើម្បីមើលផលិតផល។",
+    "brand.searchPlaceholder": "ស្វែងរកក្នុងម៉ាកផលិតផលនេះ...",
+    "brand.noProducts": "រកមិនឃើញផលិតផលទេ",
+    "brand.noProductsDesc": "យើងរកមិនឃើញផលិតផលសម្រាប់ម៉ាកនេះទេ។",
+    "common.productsFound": "ផលិតផលត្រូវបានរកឃើញ",
+    "sort.newest": "ផលិតផលថ្មីបំផុត",
+    "sort.oldest": "ផលិតផលចាស់បំផុត",
+    "sort.priceLow": "តម្លៃ៖ ទាបទៅខ្ពស់",
+    "sort.priceHigh": "តម្លៃ៖ ខ្ពស់ទៅទាប",
+
+    // Favourites
+    "fav.noFavs": "មិនទន្តមានទំនិញដែលពេញចិត្ត",
+    "fav.description": "ចុចលើរូបបេះដូងលើផលិតផលដើម្បីរក្សាវាទុក។",
+
+    // Image Search
+    "search.upload": "បញ្ចេញរូបភាព",
+    "search.imageDesc": "ស្វែងរកតាមរូបភាពដើម្បីស្វែងរកផលិតផលស្រដៀងគ្នា",
+    "search.title": "ស្វែងរកផលិតផល",
+    "search.instruction": "បញ្ចូលពាក្យស្វែងរក ឬបញ្ចេញរូបភាពដើម្បីស្វែងរកផលិតផល",
+
+    // Maintenance
+    "error.maintenanceTitle": "កំពុងជួសជុលប្រព័ន្ធ",
+    "error.maintenanceDesc": "យើងកំពុងធ្វើបច្ចុប្បន្នភាពប្រព័ន្ធដើម្បីឱ្យការប្រើប្រាស់កាន់តែប្រសើរ។ សូមរង់ចាំបន្តិច យើងនឹងត្រឡប់មកវិញក្នុងពេលឆាប់ៗនេះ។",
+    "error.serverDownTitle": "ម៉ាស៊ីនបម្រើមានបញ្ហា",
+    "error.serverDownDesc": "យើងកំពុងមានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ម៉ាស៊ីនបម្រើរបស់យើង។ សូមព្យាយាមម្តងទៀតនៅពេលក្រោយ។",
+    "error.refresh": "ព្យាយាមម្តងទៀត",
+    "error.noInternetTitle": "មិនមានការតភ្ជាប់អ៊ីនធឺណិត",
+    "error.noInternetDesc": "សូមពិនិត្យមើលការកំណត់បណ្តាញរបស់អ្នក ហើយព្យាយាមម្តងទៀត។",
+
+    // FAQs
+    "faq.title": "សំណួរដែលសួរញឹកញាប់",
+    "faq.description": "អ្វីគ្រប់យ៉ាងដែលអ្នកត្រូវដឹងអំពីផលិតផល និងសេវាកម្មរបស់យើង។",
+    "faq.q1": "តើម៉ោងដឹកជញ្ជូនរបស់អ្នកគឺជាអ្វី?",
+    "faq.a1": "យើងដឹកជញ្ជូនចាប់ពីម៉ោង ៨:០០ ព្រឹក ដល់ ៦:០០ ល្ងាច ជារៀងរាល់ថ្ងៃ។",
+    "faq.q2": "តើអ្នកមានសេវាបង់ប្រាក់ពេលទទួលទំនិញទេ?",
+    "faq.a2": "បាទ យើងគាំទ្រការបង់ប្រាក់ពេលទទួលទំនិញ (COD) សម្រាប់តំបន់ភាគច្រើន។",
+    "faq.q3": "តើខ្ញុំអាចតាមដានការបញ្ជាទិញរបស់ខ្ញុំយ៉ាងដូចម្ដេច?",
+    "faq.a3": "អ្នកអាចពិនិត្យមើលស្ថានភាពការបញ្ជាទិញរបស់អ្នកនៅក្នុងប្រវត្តិរូបរបស់អ្នក។",
   }
 }
 

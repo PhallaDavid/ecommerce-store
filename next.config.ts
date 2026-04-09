@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "rakiestore.onrender.com",
+        hostname: "rakiestore-w04r.onrender.com",
       },
     ],
   },

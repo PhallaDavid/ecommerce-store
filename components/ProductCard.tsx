@@ -54,7 +54,7 @@ export function ProductCard({
           alt={name}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-110"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
         
@@ -141,7 +141,7 @@ export function ProductCard({
 
 export function ProductCardSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm", className)}>
+    <div className={cn("flex flex-col overflow-hidden rounded-md border bg-card shadow-sm", className)}>
       <Skeleton className="aspect-4/5 w-full rounded-none" />
       <div className="p-4 space-y-3">
         <Skeleton className="h-4 w-full" />

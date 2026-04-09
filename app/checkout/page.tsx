@@ -34,6 +34,7 @@ import {
   type CartItem,
 } from "@/lib/store"
 import { useLanguage } from "@/components/LanguageProvider"
+import api from "@/utils/axios"
 
 // Dynamic import — Leaflet cannot run on SSR
 const LocationPicker = dynamic(
@@ -235,8 +236,30 @@ export default function CheckoutPage() {
     cardNumber: "", cardExpiry: "", cardCvc: "", cardName: "",
   })
 
+  const [profileLoading, setProfileLoading] = useState(false)
+
   useEffect(() => {
     setItems(getCart())
+    
+    // Fetch user profile to get phone number
+    const fetchProfile = async () => {
+      if (typeof window === "undefined" || !localStorage.getItem("auth_token")) return;
+      
+      setProfileLoading(true)
+      try {
+        const res = await api.get("/auth/profile")
+        const data = res.data?.profile ?? res.data?.user ?? res.data
+        if (data?.phone) {
+          setForm(f => ({ ...f, phone: data.phone }))
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile for checkout", err)
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+
+    fetchProfile()
     return subscribeStore(() => setItems(getCart()))
   }, [])
 
@@ -251,15 +274,43 @@ export default function CheckoutPage() {
 
   async function placeOrder() {
     setPlacing(true)
-    await new Promise((r) => setTimeout(r, 1800))
-    setCart([])
-    setPlacing(false)
-    setStep(3)
+    try {
+      // Map frontend payMethod to API expected format
+      const methodMap: Record<PayMethod, string> = {
+        aba: "ABA",
+        khqr: "KHQR",
+        card: "CARD",
+        bank: "BANK",
+        cod: "COD"
+      }
+
+      const payload = {
+        address: mapAddress || "No address provided",
+        payment_method: methodMap[payMethod],
+        phone: form.phone,
+        note: form.note || "",
+        // Most e-commerce APIs also need the cart items to verify totals
+        items: items.map(it => ({
+          product_id: Number(it.id),
+          quantity: it.qty,
+          price: it.price
+        }))
+      }
+
+      await api.post("/orders/checkout", payload)
+      
+      setCart([])
+      setStep(3)
+    } catch (e: any) {
+      alert(e.response?.data?.message || t("common.error"))
+    } finally {
+      setPlacing(false)
+    }
   }
 
   const canProceed = (() => {
     if (step === 0) return items.length > 0
-    if (step === 1) return !!mapLocation
+    if (step === 1) return !!mapLocation && !!form.phone
     if (step === 2) {
       if (payMethod === "card") return !!(form.cardName && form.cardNumber && form.cardExpiry && form.cardCvc)
       return true // khqr, aba, bank, cod — no extra fields
@@ -355,6 +406,44 @@ export default function CheckoutPage() {
         />
       </div>
 
+      <div className="rounded-2xl border bg-card p-5 space-y-4">
+        <p className="text-sm font-semibold flex items-center gap-2">
+          {t("checkout.contactInfo")}
+        </p>
+        <div className="grid grid-cols-1 gap-4">
+          <div className="rounded-xl border bg-muted/30 px-4 py-3 space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("checkout.phone")}</p>
+            <p className="text-sm font-semibold">
+              {profileLoading ? (
+                <span className="flex items-center gap-2 text-muted-foreground/50 animate-pulse italic">
+                  <span className="h-4 w-4 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                  {t("common.loading")}
+                </span>
+              ) : form.phone ? (
+                form.phone
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-destructive font-medium uppercase text-[10px] tracking-tight italic">Missing phone number</span>
+                  <Link href="/profile" className="text-[10px] font-bold text-primary hover:underline underline-offset-2">Update Profile →</Link>
+                </div>
+              )}
+            </p>
+          </div>
+          
+          <div className="space-y-1.5">
+            <label htmlFor="note" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("checkout.orderNote")}
+            </label>
+            <textarea
+              id="note"
+              placeholder={t("checkout.notePlaceholder")}
+              value={form.note}
+              onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
+              className="w-full min-h-[100px] rounded-md border bg-background px-3 py-2.5 text-sm outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary/30"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   )
 

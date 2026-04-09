@@ -8,6 +8,7 @@ import { ShoppingBag, ShoppingCart } from "lucide-react"
 import { SideSheet } from "@/components/SideSheet"
 import { Button } from "@/components/ui/button"
 import { getFavourites, subscribeStore, addToCart, type FavouriteItem } from "@/lib/store"
+import { useLanguage } from "@/components/LanguageProvider"
 
 type FavouritesSheetProps = {
   open: boolean
@@ -15,6 +16,7 @@ type FavouritesSheetProps = {
 }
 
 export function FavouritesSheet({ open, onOpenChange }: FavouritesSheetProps) {
+  const { t } = useLanguage()
   const [items, setItems] = React.useState<FavouriteItem[]>([])
 
   React.useEffect(() => {
@@ -24,18 +26,18 @@ export function FavouritesSheet({ open, onOpenChange }: FavouritesSheetProps) {
   }, [open])
 
   return (
-    <SideSheet open={open} onOpenChange={onOpenChange} title="Favourites">
+    <SideSheet open={open} onOpenChange={onOpenChange} title={t("fav.title")}>
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center py-10">
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
             <ShoppingBag className="h-6 w-6" />
           </div>
-          <div className="text-sm font-semibold">No favourites yet</div>
+          <div className="text-sm font-semibold">{t("fav.noFavs")}</div>
           <div className="mt-1 text-sm text-muted-foreground">
-            Tap the heart icon on a product to save it.
+            {t("fav.description")}
           </div>
           <Button className="mt-4" onClick={() => onOpenChange(false)}>
-            Browse products
+            {t("cart.continueShopping")}
           </Button>
         </div>
       ) : (
@@ -89,7 +91,7 @@ export function FavouritesSheet({ open, onOpenChange }: FavouritesSheetProps) {
                     }}
                   >
                     <ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
-                    ADD TO CART
+                    {t("cart.addToCart").toUpperCase()}
                   </Button>
                 </div>
               </div>

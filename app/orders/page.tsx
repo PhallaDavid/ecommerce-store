@@ -7,72 +7,55 @@ import {
   Clock, ChevronDown, RotateCcw, Eye, Search
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { addToCart } from "@/lib/store"
+import { useLanguage } from "@/components/LanguageProvider"
+import api from "@/utils/axios"
+import { fixImageUrl } from "@/lib/store"
 
-// ── Mock orders data ───────────────────────────────────────────────────────────
-const BASE_IMG = "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/Homepage%20Collections/Category%20Highlight/MAR26-WEB%20Homepage_WOMEN_Tops.jpg"
-const BANNER_IMG = "https://zand.sgp1.cdn.digitaloceanspaces.com/catalog/banner/2026/TEN11/Mar/KNY%20Sale/MAR26-CatFeed%20-Women-BestSellers-WEB%20HP.jpg"
-
+// ── Types ─────────────────────────────────────────────────────────────────────
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled"
 
-const ORDERS = [
-  {
-    id: "R4K-72841", date: "2026-03-28", status: "delivered" as OrderStatus, total: 31.45,
-    items: [
-      { id: "p1", name: "Classic Halter Twist Top", qty: 2, price: 8.95, image: BASE_IMG },
-      { id: "p3", name: "Ruched Bodycon Dress",     qty: 1, price: 13.55, image: BANNER_IMG },
-    ],
-    payment: "KHQR", address: "12 Street 274, Phnom Penh"
-  },
-  {
-    id: "R4K-63920", date: "2026-03-20", status: "shipped" as OrderStatus, total: 19.99,
-    items: [
-      { id: "p4", name: "Linen Wide-Leg Pants", qty: 1, price: 19.99, image: BANNER_IMG },
-    ],
-    payment: "ABA Pay", address: "45 Norodom Blvd, Phnom Penh"
-  },
-  {
-    id: "R4K-55103", date: "2026-03-10", status: "processing" as OrderStatus, total: 46.95,
-    items: [
-      { id: "p7", name: "Strappy Heeled Sandals", qty: 1, price: 35.00, image: BASE_IMG },
-      { id: "p8", name: "Canvas Tote Bag",        qty: 1, price: 9.50,  image: BANNER_IMG },
-      { id: "p12", name: "Pearl Drop Earrings",   qty: 2, price: 2.45,  image: BASE_IMG },
-    ],
-    payment: "Credit Card", address: "12 Street 274, Phnom Penh"
-  },
-  {
-    id: "R4K-41287", date: "2026-02-28", status: "cancelled" as OrderStatus, total: 22.00,
-    items: [{ id: "p3", name: "Ruched Bodycon Dress", qty: 1, price: 22.00, image: BANNER_IMG }],
-    payment: "COD", address: "12 Street 274, Phnom Penh"
-  },
-  {
-    id: "R4K-38002", date: "2026-02-14", status: "delivered" as OrderStatus, total: 11.00,
-    items: [{ id: "p5", name: "Oversized Graphic Tee", qty: 1, price: 11.00, image: BASE_IMG }],
-    payment: "Bank Transfer", address: "12 Street 274, Phnom Penh"
-  },
-]
+interface OrderItem {
+  id: string | number
+  name: string
+  qty: number
+  price: number
+  image: string
+}
+
+interface Order {
+  id: string | number
+  date: string
+  status: OrderStatus
+  total: number
+  items: OrderItem[]
+  payment: string
+  address: string
+}
 
 // ── Status config ──────────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; icon: React.ElementType }> = {
-  pending:    { label: "Pending",    color: "text-amber-600 bg-amber-50 border-amber-200",    icon: Clock },
-  processing: { label: "Processing", color: "text-blue-600 bg-blue-50 border-blue-200",       icon: Package },
-  shipped:    { label: "Shipped",    color: "text-purple-600 bg-purple-50 border-purple-200", icon: Truck },
-  delivered:  { label: "Delivered",  color: "text-green-600 bg-green-50 border-green-200",    icon: CheckCircle2 },
-  cancelled:  { label: "Cancelled",  color: "text-red-600 bg-red-50 border-red-200",          icon: XCircle },
+function getStatusConfig(t: any): Record<OrderStatus, { label: string; color: string; icon: React.ElementType }> {
+  return {
+    pending:    { label: t("order.status.pending"),    color: "text-amber-600 bg-amber-50 border-amber-200",    icon: Clock },
+    processing: { label: t("order.status.processing"), color: "text-blue-600 bg-blue-50 border-blue-200",       icon: Package },
+    shipped:    { label: t("order.status.shipped"),    color: "text-purple-600 bg-purple-50 border-purple-200", icon: Truck },
+    delivered:  { label: t("order.status.delivered"),  color: "text-green-600 bg-green-50 border-green-200",    icon: CheckCircle2 },
+    cancelled:  { label: t("order.status.cancelled"),  color: "text-red-600 bg-red-50 border-red-200",          icon: XCircle },
+  }
 }
 
 // ── Order progress bar ─────────────────────────────────────────────────────────
 const PROGRESS_STEPS: OrderStatus[] = ["pending", "processing", "shipped", "delivered"]
 
-function OrderProgress({ status }: { status: OrderStatus }) {
+function OrderProgress({ status, statusConfig }: { status: OrderStatus; statusConfig: any }) {
   if (status === "cancelled") return null
   const idx = PROGRESS_STEPS.indexOf(status)
   return (
     <div className="flex items-center gap-1 mt-3">
       {PROGRESS_STEPS.map((s, i) => {
-        const cfg = STATUS_CONFIG[s]
+        const cfg = statusConfig[s]
         const Icon = cfg.icon
         const done = i <= idx
         return (
@@ -96,99 +79,102 @@ function OrderProgress({ status }: { status: OrderStatus }) {
 }
 
 // ── Order card ─────────────────────────────────────────────────────────────────
-function OrderCard({ order }: { order: typeof ORDERS[0] }) {
+function OrderCard({ order, statusConfig }: { order: Order; statusConfig: any }) {
+  const { t } = useLanguage()
   const [expanded, setExpanded] = useState(false)
-  const cfg = STATUS_CONFIG[order.status]
+  const cfg = statusConfig[order.status]
   const Icon = cfg.icon
 
   function reorder() {
-    order.items.forEach(it => addToCart({ id: it.id, name: it.name, href: `/products/${it.id}`, image: it.image, price: it.price }, it.qty))
+    order.items.forEach(it => addToCart({ id: String(it.id), name: it.name, href: `/products/${it.id}`, image: it.image, price: it.price }, it.qty))
   }
 
   return (
-    <div className="rounded-md border bg-card overflow-hidden">
+    <div className="rounded-2xl border bg-card overflow-hidden">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b">
         <div className="space-y-0.5">
-          <p className="text-xs text-muted-foreground">Order ID</p>
-          <p className="text-sm font-bold font-mono">{order.id}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("order.id")}</p>
+          <p className="text-sm font-bold font-mono text-primary">{order.id}</p>
         </div>
         <div className="space-y-0.5 text-right">
-          <p className="text-xs text-muted-foreground">Date</p>
-          <p className="text-sm font-medium">{new Date(order.date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("order.date")}</p>
+          <p className="text-sm font-semibold">{new Date(order.date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
         </div>
         <div className="space-y-0.5 text-right">
-          <p className="text-xs text-muted-foreground">Total</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("order.total")}</p>
           <p className="text-sm font-bold text-primary">${order.total.toFixed(2)}</p>
         </div>
-        <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold", cfg.color)}>
+        <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold", cfg.color)}>
           <Icon className="h-3.5 w-3.5" /> {cfg.label}
         </span>
       </div>
 
       {/* Item preview */}
       <div className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          {order.items.slice(0, 3).map((it) => (
-            <div key={it.id} className="relative">
-              <img src={it.image} alt={it.name} className="h-12 w-12 rounded-lg object-cover bg-muted border" />
-              {it.qty > 1 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">{it.qty}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex -space-x-2 overflow-hidden">
+            {order.items.slice(0, 3).map((it) => (
+              <div key={it.id} className="relative inline-block ring-2 ring-background rounded-xl">
+                <img src={it.image} alt={it.name} className="h-12 w-12 rounded-xl object-cover bg-muted border" />
+              </div>
+            ))}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate text-foreground/80">
+              {order.items[0].name}
+              {order.items.length > 1 && (
+                <span className="text-muted-foreground font-normal ml-1">
+                   + {order.items.length - 1} {t("order.itemsCount")}
+                </span>
               )}
-            </div>
-          ))}
-          {order.items.length > 3 && (
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted border text-xs font-semibold text-muted-foreground">
-              +{order.items.length - 3}
-            </div>
-          )}
-          <div className="ml-2 flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{order.items[0].name}{order.items.length > 1 && ` +${order.items.length - 1} more`}</p>
-            <p className="text-xs text-muted-foreground">{order.payment}</p>
+            </p>
+            <p className="text-xs text-muted-foreground font-medium">{order.payment}</p>
           </div>
         </div>
 
         {/* Progress */}
-        <OrderProgress status={order.status} />
+        <OrderProgress status={order.status} statusConfig={statusConfig} />
 
         {/* Expanded detail */}
         {expanded && (
-          <div className="mt-3 space-y-3 border-t pt-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Items</p>
-            {order.items.map((it) => (
-              <div key={it.id} className="flex items-center gap-3">
-                <img src={it.image} alt={it.name} className="h-14 w-14 rounded-xl object-cover bg-muted border shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <Link href={`/products/${it.id}`} className="text-sm font-medium hover:text-primary transition-colors line-clamp-1">{it.name}</Link>
-                  <p className="text-xs text-muted-foreground">Qty: {it.qty}</p>
+          <div className="mt-4 space-y-4 border-t pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("order.items")}</p>
+            <div className="space-y-3">
+              {order.items.map((it) => (
+                <div key={it.id} className="flex items-center gap-4">
+                  <img src={it.image} alt={it.name} className="h-14 w-14 rounded-2xl object-cover bg-muted border shrink-0 shadow-sm" />
+                  <div className="min-w-0 flex-1">
+                    <Link href={`/products/${it.id}`} className="text-sm font-bold hover:text-primary transition-colors line-clamp-1">{it.name}</Link>
+                    <p className="text-xs text-muted-foreground font-medium">{t("order.qty")}: {it.qty}</p>
+                  </div>
+                  <span className="text-sm font-bold shrink-0">${(it.price * it.qty).toFixed(2)}</span>
                 </div>
-                <span className="text-sm font-semibold shrink-0">${(it.price * it.qty).toFixed(2)}</span>
-              </div>
-            ))}
-            <div className="rounded-xl bg-muted p-3 space-y-1 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Payment</span><span className="font-medium">{order.payment}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Delivery to</span><span className="font-medium text-right max-w-[180px] text-xs">{order.address}</span></div>
-              <div className="flex justify-between font-bold"><span>Total</span><span className="text-primary">${order.total.toFixed(2)}</span></div>
+              ))}
+            </div>
+            <div className="rounded-2xl bg-muted/40 p-4 space-y-2 text-sm border border-dashed">
+              <div className="flex justify-between"><span className="text-muted-foreground text-xs font-medium">{t("order.payment")}</span><span className="font-bold">{order.payment}</span></div>
+              <div className="flex justify-between items-start"><span className="text-muted-foreground text-xs font-medium">{t("order.deliveryTo")}</span><span className="font-semibold text-right max-w-[200px] text-xs leading-relaxed">{order.address}</span></div>
+              <div className="border-t border-dashed pt-2 flex justify-between font-bold text-base"><span>{t("order.total")}</span><span className="text-primary">${order.total.toFixed(2)}</span></div>
             </div>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2 border-t pt-3">
-          <button type="button" onClick={() => setExpanded(v => !v)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
-            <Eye className="h-3.5 w-3.5" /> {expanded ? "Hide" : "View"} Details
-            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
-          </button>
+        <div className="flex items-center gap-2 border-t pt-3 mt-1">
+          <Link href={`/orders/${order.id}`}
+            className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
+            <Eye className="h-3.5 w-3.5" /> {t("order.viewDetails")}
+          </Link>
           <div className="flex-1" />
           {order.status === "delivered" && (
-            <Button size="sm" variant="outline" className="text-xs gap-1.5 h-7" onClick={reorder}>
-              <RotateCcw className="h-3 w-3" /> Reorder
+            <Button size="sm" variant="outline" className="text-xs font-bold gap-1.5 h-8 rounded-xl px-4" onClick={reorder}>
+              <RotateCcw className="h-3.5 w-3.5" /> {t("order.reorder")}
             </Button>
           )}
-          {order.status === "shipped" && (
-            <Button size="sm" variant="outline" className="text-xs gap-1.5 h-7">
-              <Truck className="h-3 w-3" /> Track
+          {(order.status === "shipped" || order.status === "processing") && (
+            <Button size="sm" variant="outline" className="text-xs font-bold gap-1.5 h-8 rounded-xl px-4">
+              <Truck className="h-3.5 w-3.5" /> {t("order.track")}
             </Button>
           )}
         </div>
@@ -197,84 +183,162 @@ function OrderCard({ order }: { order: typeof ORDERS[0] }) {
   )
 }
 
-// ── Main page ──────────────────────────────────────────────────────────────────
-const STATUS_TABS: { label: string; value: string }[] = [
-  { label: "All",       value: "all" },
-  { label: "Active",    value: "active" },
-  { label: "Delivered", value: "delivered" },
-  { label: "Cancelled", value: "cancelled" },
-]
+function OrderSkeleton() {
+  return (
+    <div className="rounded-2xl border bg-card p-4 space-y-4">
+      <div className="flex items-center justify-between pb-4 border-b">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-12" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-12 ml-auto" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+        <Skeleton className="h-6 w-24 rounded-full" />
+      </div>
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-12 w-12 rounded-xl" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      </div>
+      <div className="flex gap-2 pt-2">
+        <Skeleton className="h-2 flex-1 rounded-full" />
+        <Skeleton className="h-2 flex-1 rounded-full" />
+        <Skeleton className="h-2 flex-1 rounded-full" />
+      </div>
+    </div>
+  )
+}
 
+// ── Main page ──────────────────────────────────────────────────────────────────
 export default function OrdersPage() {
+  const { t } = useLanguage()
   const [tab, setTab] = useState("all")
   const [search, setSearch] = useState("")
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filtered = ORDERS.filter((o) => {
+  const statusConfig = getStatusConfig(t)
+
+  React.useEffect(() => {
+    const fetchOrders = async () => {
+      setLoading(true)
+      try {
+        const res = await api.get("/orders")
+        // Mapping real API data to our UI component types
+        const rawOrders = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+        const mappedOrders: Order[] = rawOrders.map((o: any) => ({
+          id: o.order_number || o.id,
+          date: o.created_at || o.date,
+          status: (o.status?.toLowerCase() || "pending") as OrderStatus,
+          total: Number(o.total_price || o.total),
+          payment: o.payment_method || "Unknown",
+          address: o.address || o.location_name || "N/A",
+          items: (o.items || []).map((it: any) => ({
+            id: it.product_id || it.id,
+            name: it.product?.name || it.name,
+            qty: it.quantity || it.qty,
+            price: Number(it.price),
+            image: fixImageUrl(it.product?.image || it.image)
+          }))
+        }))
+        setOrders(mappedOrders)
+      } catch (err) {
+        console.error("Failed to fetch orders", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOrders()
+  }, [t])
+
+  const filtered = orders.filter((o) => {
     if (tab === "active" && !["pending", "processing", "shipped"].includes(o.status)) return false
     if (tab === "delivered" && o.status !== "delivered") return false
     if (tab === "cancelled" && o.status !== "cancelled") return false
-    if (search && !o.id.toLowerCase().includes(search.toLowerCase())) return false
+    if (search && !String(o.id).toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
 
+  const tabs = [
+    { label: t("home.seeAll"), value: "all", count: orders.length },
+    { label: t("order.status.processing"), value: "active", count: orders.filter(o => ["pending", "processing", "shipped"].includes(o.status)).length },
+    { label: t("order.status.delivered"), value: "delivered", count: orders.filter(o => o.status === "delivered").length },
+    { label: t("order.status.cancelled"), value: "cancelled", count: orders.filter(o => o.status === "cancelled").length },
+  ]
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 lg:px-8 max-w-7xl">
+    <div className="min-h-screen bg-background pb-20">
+      <div className="container mx-auto px-4 py-8 lg:px-8 max-w-5xl">
 
         {/* Breadcrumb */}
         <nav className="mb-8 flex items-center space-x-2 text-sm font-medium text-muted-foreground">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+          <Link href="/" className="hover:text-primary transition-colors">{t("nav.home")}</Link>
           <ChevronRight className="h-4 w-4" />
-          <Link href="/profile" className="hover:text-primary transition-colors">Profile</Link>
+          <Link href="/profile" className="hover:text-primary transition-colors">{t("nav.profile")}</Link>
           <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground">My Orders</span>
+          <span className="text-foreground font-bold">{t("orders.title")}</span>
         </nav>
 
         {/* Header */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">My Orders</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">{ORDERS.length} orders</p>
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-6">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">{t("orders.title")}</h1>
+            <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+               <Package className="h-4 w-4" />
+               {orders.length} {t("order.itemsCount")}
+            </p>
           </div>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by order ID…"
-              className="w-44 rounded-full border bg-background py-1.5 pl-8 pr-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all" />
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+            <input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              placeholder={t("orders.searchPlaceholder")}
+              className="w-full rounded-2xl border bg-card py-2.5 pl-10 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm" 
+            />
           </div>
         </div>
 
         {/* Status tabs */}
-        <div className="mb-6 flex gap-1 rounded-xl bg-muted p-1">
-          {STATUS_TABS.map((t) => (
+        <div className="mb-8 flex gap-2 p-1 bg-muted/50 rounded-2xl overflow-x-auto no-scrollbar">
+          {tabs.map((t) => (
             <button key={t.value} type="button" onClick={() => setTab(t.value)}
-              className={cn("flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all",
-                tab === t.value ? "bg-background  text-foreground" : "text-muted-foreground hover:text-foreground"
+              className={cn("whitespace-nowrap flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition-all shadow-sm",
+                tab === t.value ? "bg-background text-primary" : "text-muted-foreground hover:bg-background/50 hover:text-foreground"
               )}>
               {t.label}
-              {t.value !== "all" && (
-                <span className="ml-1 opacity-60">
-                  ({ORDERS.filter(o => t.value === "active" ? ["pending","processing","shipped"].includes(o.status) : o.status === t.value).length})
-                </span>
-              )}
+              <span className={cn("inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black tabular-nums",
+                tab === t.value ? "bg-primary/10 text-primary" : "bg-muted-foreground/10 text-muted-foreground"
+              )}>
+                {t.count}
+              </span>
             </button>
           ))}
         </div>
 
         {/* Orders list */}
-        <div className="space-y-4">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                <Package className="h-7 w-7 text-muted-foreground" />
+        <div className="space-y-6">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => <OrderSkeleton key={i} />)
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed rounded-3xl bg-muted/20">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted/50 text-muted-foreground/40 ring-8 ring-muted/20">
+                <Package className="h-10 w-10" />
               </div>
-              <p className="font-semibold">No orders found</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {search ? "Try a different order ID." : "You haven't placed any orders yet."}
+              <p className="text-xl font-bold text-foreground mb-2">{t("orders.noOrders")}</p>
+              <p className="max-w-xs mx-auto text-sm text-muted-foreground mb-8">
+                {search ? "Try searching for a different order ID." : t("orders.noOrdersDesc")}
               </p>
-              <Button className="mt-4" asChild><Link href="/products">Start Shopping</Link></Button>
+              <Button size="lg" className="rounded-2xl font-bold px-8" asChild>
+                <Link href="/products">{t("home.shopNow")}</Link>
+              </Button>
             </div>
           ) : (
-            filtered.map((order) => <OrderCard key={order.id} order={order} />)
+            filtered.map((order) => <OrderCard key={String(order.id)} order={order} statusConfig={statusConfig} />)
           )}
         </div>
       </div>

@@ -2,311 +2,215 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { Heart, Loader2, ShoppingCart } from "lucide-react"
+import { ChevronRight, Loader2, PackageOpen, Search, SearchX } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { addToCart, getFavourites, subscribeStore, toggleFavourite } from "@/lib/store"
 import api from "@/utils/axios"
+import { Input } from "@/components/ui/input"
+import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard"
+import { Product, Brand, PaginatedResponse } from "@/types/api"
+import { useLanguage } from "@/components/LanguageProvider"
 
-type PageProps = {
-  params: Promise<{ slug: string }>
-}
-
-type Brand = {
-  id: number
+type ProductCardProps = {
+  id: string
   name: string
-  description: string | null
-  avatar: string | null
-  created_at: string
+  description?: string
+  href: string
+  image: string
+  price: number
+  compareAt?: number
 }
 
-const allProducts = [
-  {
-    id: "p1",
-    name: "iPhone Case",
-    brand: "apple",
-    image: "/images/STU_8189-cr-450x672.jpg",
-    price: 19.99,
-    compareAt: 29.99,
-  },
-  {
-    id: "p2",
-    name: "AirPods Sleeve",
-    brand: "apple",
-    image: "/images/STU_8189-cr-450x672.jpg",
-    price: 12.0,
-    compareAt: 18.0,
-  },
-  {
-    id: "p3",
-    name: "Galaxy Case",
-    brand: "samsung",
-    image: "/images/STU_8189-cr-450x672.jpg",
-    price: 15.0,
-    compareAt: 25.0,
-  },
-  {
-    id: "p4",
-    name: "Wireless Headphones",
-    brand: "sony",
-    image: "/images/STU_8189-cr-450x672.jpg",
-    price: 89.0,
-    compareAt: 109.0,
-  },
-  {
-    id: "p5",
-    name: "Running Sneakers",
-    brand: "nike",
-    image: "/images/STU_8189-cr-450x672.jpg",
-    price: 79.0,
-    compareAt: 99.0,
-  },
-  {
-    id: "p6",
-    name: "Training Tee",
-    brand: "adidas",
-    image: "/images/STU_8189-cr-450x672.jpg",
-    price: 29.99,
-    compareAt: 39.99,
-  },
-] as const
+const FALLBACK_IMG = "/images/STU_8189-cr-450x672.jpg"
 
-function titleFromSlug(slug: string) {
-  return slug
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (m) => m.toUpperCase())
+function toNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim()) {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : null
+  }
+  return null
 }
 
-function slugify(input: string) {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-}
-
-function formatPrice(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value)
-}
-
-type SortValue = "new" | "price_asc" | "price_desc"
-
-export default function BrandPage({ params }: PageProps) {
+export default function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { t } = useLanguage()
   const { slug } = React.use(params)
-  const [brand, setBrand] = React.useState<Brand | null>(null)
-  const [brandLoading, setBrandLoading] = React.useState(false)
-  const [brandError, setBrandError] = React.useState<string | null>(null)
-
+  // Support both slug (name) or ID (number)
   const brandId = React.useMemo(() => {
     const n = Number(slug)
     return Number.isFinite(n) ? n : null
   }, [slug])
 
+  const [products, setProducts] = React.useState<ProductCardProps[]>([])
+  const [brand, setBrand] = React.useState<Brand | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [query, setQuery] = React.useState("")
+
   React.useEffect(() => {
-    if (brandId == null) return
     let cancelled = false
     ;(async () => {
-      setBrandLoading(true)
-      setBrandError(null)
+      setIsLoading(true)
+      setError(null)
       try {
-        const res = await api.get<Brand[]>("/brands")
-        const found = Array.isArray(res.data)
-          ? res.data.find((b) => b.id === brandId) ?? null
-          : null
-        if (!cancelled) setBrand(found)
-      } catch (e: unknown) {
-        if (!cancelled) {
-          setBrand(null)
-          setBrandError(e instanceof Error ? e.message : "Failed to load brand")
+        // If it's a number, we can fetch products by brand ID
+        if (brandId !== null) {
+          // 1. Fetch products by brand
+          const productsRes = await api.get<PaginatedResponse<Product>>(`/products/brand/${brandId}`)
+          
+          // 2. Fetch all brands to find the current one's name
+          const brandsRes = await api.get<PaginatedResponse<Brand>>("/brands")
+          
+          if (cancelled) return
+
+          const productsData = productsRes.data && "data" in productsRes.data 
+            ? productsRes.data.data 
+            : (Array.isArray(productsRes.data) ? productsRes.data : [])
+
+          const mapped = productsData
+            .filter((p) => (p.status ? p.status === "active" : true))
+            .map((p) => {
+              const id = String(p.id)
+              const original = toNumber(p.original_price)
+              const current = (typeof p.current_price === "number" ? p.current_price : null) ?? toNumber(p.promo_price) ?? original ?? 0
+              const compareAt = original != null && original > current ? original : undefined
+              return {
+                id,
+                name: p.name,
+                description: p.description ?? undefined,
+                href: `/products/${id}`,
+                image: p.thumbnail || FALLBACK_IMG,
+                price: current,
+                compareAt,
+              }
+            })
+
+          const brandsData = brandsRes.data && "data" in brandsRes.data ? brandsRes.data.data : (Array.isArray(brandsRes.data) ? brandsRes.data : [])
+          const currentBrand = brandsData.find(b => b.id === brandId)
+
+          if (!cancelled) {
+            setProducts(mapped)
+            setBrand(currentBrand || null)
+          }
+        } else {
+            // Slug-based logic (if needed, but for now we prioritize ID as requested)
+            // For now, if it's not a number, we just show empty
+            setIsLoading(false)
         }
+      } catch (e: unknown) {
+        if (cancelled) return
+        setProducts([])
+        setError(e instanceof Error ? e.message : "Failed to load products")
       } finally {
-        if (!cancelled) setBrandLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [brandId])
+  }, [brandId, slug])
 
-  const brandTitle = brand?.name ?? titleFromSlug(slug)
-  const [sort, setSort] = React.useState<SortValue>("new")
-  const [wishlisted, setWishlisted] = React.useState<Record<string, boolean>>({})
+  const filtered = React.useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return products
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description ? p.description.toLowerCase().includes(q) : false)
+    )
+  }, [products, query])
 
-  React.useEffect(() => {
-    const refresh = () => {
-      const favs = getFavourites()
-      setWishlisted(Object.fromEntries(favs.map((f) => [f.id, true])))
-    }
-    refresh()
-    return subscribeStore(refresh)
-  }, [])
-
-  const products = React.useMemo(() => {
-    const filterKey = brand ? slugify(brand.name) : slug
-    const base = allProducts.filter((p) => p.brand === filterKey)
-    if (sort === "price_asc") return [...base].sort((a, b) => a.price - b.price)
-    if (sort === "price_desc") return [...base].sort((a, b) => b.price - a.price)
-    return base
-  }, [brand, slug, sort])
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8 lg:px-8 space-y-6">
+          <nav className="flex items-center space-x-2 text-sm">
+            <div className="h-4 w-10 bg-muted animate-pulse rounded" />
+            <ChevronRight className="h-4 w-4 text-muted/40" />
+            <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+            <ChevronRight className="h-4 w-4 text-muted/40" />
+            <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+          </nav>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-3">
+              <div className="h-8 w-48 bg-muted animate-pulse rounded-md" />
+              <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+            </div>
+            <div className="h-10 w-full sm:w-[360px] bg-muted animate-pulse rounded-xl" />
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={`skeleton-${i}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="py-8">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <nav className="text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Home
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 lg:px-8 space-y-6">
+        <nav className="flex items-center space-x-2 text-sm font-medium text-muted-foreground">
+          <Link href="/" className="hover:text-primary transition-colors">
+            {t("nav.home")}
           </Link>
-          <span className="mx-2">/</span>
-          <Link href="/brands" className="hover:text-foreground transition-colors">
-            Brands
+          <ChevronRight className="h-4 w-4" />
+          <Link href="/brands" className="hover:text-primary transition-colors">
+            {t("nav.brands")}
           </Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground">{brandTitle}</span>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground">{brand?.name || t("brand.title")}</span>
         </nav>
 
-        <div className="rounded-2xl border bg-card p-5 sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{brandTitle}</h1>
-              <p className="text-sm text-muted-foreground">
-                {products.length} products
-              </p>
-              {brandLoading ? (
-                <p className="mt-2 inline-flex items-center text-xs text-muted-foreground">
-                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                  Loading brand details
-                </p>
-              ) : brandError ? (
-                <p className="mt-2 text-xs text-destructive">{brandError}</p>
-              ) : brand?.description ? (
-                <p className="mt-2 text-sm text-muted-foreground">{brand.description}</p>
-              ) : null}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+               {brand?.avatar && (
+                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border bg-muted">
+                    <img src={brand.avatar} alt={brand.name} className="h-full w-full object-cover" />
+                 </div>
+               )}
+               <div>
+                  <h1 className="text-2xl font-bold tracking-tight">
+                    {brand ? brand.name : (brandId ? t("brand.title") : slug)}
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    {filtered.length} {t("common.productsFound")}
+                  </p>
+               </div>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2">
-              <label htmlFor="sort" className="text-sm text-muted-foreground">
-                Sort
-              </label>
-              <select
-                id="sort"
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortValue)}
-                className={cn(
-                  "h-9 rounded-md border bg-background px-3 text-sm",
-                  "focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                )}
-              >
-                <option value="new">New</option>
-                <option value="price_asc">Price: Low → High</option>
-                <option value="price_desc">Price: High → Low</option>
-              </select>
-            </div>
+          <div className="relative w-full sm:w-[360px]">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("brand.searchPlaceholder")}
+              className="pl-9 h-10 rounded-xl"
+            />
           </div>
         </div>
 
-        {products.length === 0 ? (
-          <div className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">
-            No products found for this brand yet.
+        {error ? (
+          <div className="rounded-xl border bg-destructive/5 p-4 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
+
+        {filtered.length === 0 ? (
+          <div className="rounded-2xl border border-dashed bg-muted/30 p-12 text-center">
+             <div className="mb-4 flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-muted/50 text-muted-foreground/40">
+                <PackageOpen className="h-8 w-8" />
+             </div>
+             <p className="font-semibold text-foreground text-xl mb-1">{t("brand.noProducts")}</p>
+             <p className="max-w-xs mx-auto text-sm text-muted-foreground">{t("brand.noProductsDesc")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {products.map((p) => {
-              const discountPercent =
-                p.compareAt > p.price
-                  ? Math.round(((p.compareAt - p.price) / p.compareAt) * 100)
-                  : 0
-
-              return (
-                <Link
-                  key={p.id}
-                  href={`/products/${p.id}`}
-                  className="group overflow-hidden rounded-2xl border bg-card hover:bg-muted/30 transition-colors"
-                >
-                  <div className="relative">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                    </div>
-
-                    {discountPercent > 0 ? (
-                      <Badge className="absolute left-3 top-3">-{discountPercent}%</Badge>
-                    ) : null}
-
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon-sm"
-                      className="absolute right-3 top-3 rounded-full bg-background/85 backdrop-blur border  hover:bg-background"
-                      aria-label="Add to wishlist"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        toggleFavourite({
-                          id: p.id,
-                          name: p.name,
-                          href: `/products/${p.id}`,
-                          image: p.image,
-                          price: p.price,
-                          compareAt: p.compareAt,
-                        })
-                        setWishlisted((prev) => ({ ...prev, [p.id]: !prev[p.id] }))
-                      }}
-                    >
-                      <Heart
-                        className={cn(
-                          "h-4 w-4",
-                          wishlisted[p.id] ? "fill-primary text-primary" : ""
-                        )}
-                      />
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon-sm"
-                      className="absolute right-3 top-14 rounded-full bg-background/85 backdrop-blur border  hover:bg-background"
-                      aria-label="Add to cart"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        addToCart(
-                          {
-                            id: p.id,
-                            name: p.name,
-                            href: `/products/${p.id}`,
-                            image: p.image,
-                            price: p.price,
-                          },
-                          1
-                        )
-                      }}
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="p-3">
-                    <div className="truncate text-sm font-semibold">{p.name}</div>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-primary">{formatPrice(p.price)}</span>
-                      <span className="text-xs text-muted-foreground line-through">
-                        {formatPrice(p.compareAt)}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
+            {filtered.map((p) => (
+              <ProductCard key={p.id} {...p} />
+            ))}
           </div>
         )}
       </div>

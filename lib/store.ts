@@ -45,7 +45,7 @@ function emitStoreUpdate() {
 }
 
 /**
- * Fix potential double URL mess: http://rakiestore.onrender.comhttps://res.cloudinary.com/...
+ * Fix potential double URL mess: http://rakiestore-w04r.onrender.comhttps://res.cloudinary.com/...
  */
 export function fixImageUrl(url?: string | null): string {
   if (!url) return "/images/STU_8189-cr-450x672.jpg"

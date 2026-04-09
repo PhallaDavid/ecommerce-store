@@ -47,6 +47,7 @@ export const metadata: Metadata = {
 
 import { Toaster } from "@/components/ui/sonner"
 import { LanguageProvider } from "@/components/LanguageProvider"
+import { OfflineDetector } from "@/components/OfflineDetector"
 
 import { ThemeProvider } from "@/components/ThemeProvider"
 
@@ -64,6 +65,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <LanguageProvider>
+            <OfflineDetector />
             <TopLoader />
             <PromoPopup />
             <Header />

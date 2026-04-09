@@ -1,6 +1,6 @@
 import axios, { AxiosHeaders, type InternalAxiosRequestConfig } from "axios";
 
-const DEFAULT_API_BASE_URL = "https://rakiestore.onrender.com";
+const DEFAULT_API_BASE_URL = "https://rakiestore-w04r.onrender.com";
 const baseURL =
   (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim() || DEFAULT_API_BASE_URL;
 

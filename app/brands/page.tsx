@@ -7,7 +7,10 @@ import { ArrowRight, Loader2 } from "lucide-react"
 import api from "@/utils/axios"
 import { Brand, PaginatedResponse } from "@/types/api"
 
+import { useLanguage } from "@/components/LanguageProvider"
+
 export default function BrandsPage() {
+  const { t } = useLanguage()
   const [brands, setBrands] = React.useState<Brand[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
@@ -28,7 +31,7 @@ export default function BrandsPage() {
         setBrands(data)
       } catch (e: unknown) {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : "Failed to load brands")
+        setError(e instanceof Error ? e.message : t("common.error"))
       } finally {
         if (!cancelled) setIsLoading(false)
       }
@@ -36,38 +39,61 @@ export default function BrandsPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
+
+  if (isLoading) {
+    return (
+      <div className="py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="space-y-2">
+            <div className="h-8 w-40 bg-muted animate-pulse rounded-md" />
+            <div className="h-4 w-60 bg-muted animate-pulse rounded-md" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                className="group overflow-hidden rounded-md border bg-card/60"
+              >
+                <div className="relative aspect-16/10 bg-muted animate-pulse" />
+                <div className="p-3 flex items-center justify-between gap-2">
+                  <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                  <ArrowRight className="h-4 w-4 text-muted/20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="py-8">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div>
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Brands</h1>
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{t("brand.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            Pick a brand to browse products.
+            {t("brand.description")}
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Loading brands
-          </div>
-        ) : error ? (
-          <div className="rounded-2xl border bg-card p-6 text-center text-sm text-destructive">
+        {error ? (
+          <div className="rounded-md border bg-destructive/5 p-6 text-center text-sm text-destructive font-medium">
             {error}
           </div>
         ) : brands.length === 0 ? (
-          <div className="rounded-2xl border bg-card p-6 text-center text-sm text-muted-foreground">
-            No brands found.
+          <div className="rounded-md border border-dashed bg-muted/30 p-12 text-center text-sm text-muted-foreground font-medium">
+            {t("common.noProductsFound")}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {brands.map((brand) => (
               <Link
                 key={brand.id}
-                href={`/brands/${brand.id}`}
-                className="group overflow-hidden rounded-2xl border bg-card hover:bg-muted/30 transition-colors"
+                href={`/products/brand/${brand.id}`}
+                className="group overflow-hidden rounded-md border bg-card hover:bg-muted/30 transition-colors"
                 aria-label={brand.name}
               >
                 <div className="relative aspect-16/10 bg-muted">

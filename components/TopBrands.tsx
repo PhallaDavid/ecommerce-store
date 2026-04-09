@@ -11,6 +11,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel"
 import api from "@/utils/axios"
+import Autoplay from "embla-carousel-autoplay"
 import { Brand, PaginatedResponse } from "@/types/api"
 import { useLanguage } from "@/components/LanguageProvider"
 
@@ -19,6 +20,10 @@ export function TopBrands() {
   const [brands, setBrands] = React.useState<Brand[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+
+  const plugin = React.useRef(
+    Autoplay({ delay: 2000, stopOnInteraction: false, stopOnMouseEnter: true })
+  )
 
   React.useEffect(() => {
     let cancelled = false
@@ -69,7 +74,8 @@ export function TopBrands() {
 
       <Carousel
         className="w-full"
-        opts={{ align: "start", dragFree: true, containScroll: "trimSnaps" }}
+        opts={{ align: "start", dragFree: true, containScroll: "trimSnaps", loop: true }}
+        plugins={[plugin.current]}
       >
         <CarouselContent>
           {isLoading
@@ -94,7 +100,7 @@ export function TopBrands() {
                     className="group flex w-full p-2 flex-col items-center rounded-full bg-card transition-colors hover:bg-muted/30"
                     aria-label={brand.name}
                   >
-                    <div className="flex w-full aspect-square items-center justify-center rounded-md bg-muted overflow-hidden border">
+                    <div className="flex w-full aspect-square items-center justify-center rounded-full bg-muted overflow-hidden border">
                       {brand.avatar ? (
                         <div className="relative w-full h-full">
                           <Image
