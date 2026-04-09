@@ -28,6 +28,7 @@ const katumruyPro = Kantumruy_Pro({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://ecommerce-store-phi-nine.vercel.app'),
   title: "R4kie.S ",
   description: "R4kie.S is a ecommerce store ",
   icons: {

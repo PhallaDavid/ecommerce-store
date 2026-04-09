@@ -3,11 +3,11 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ShoppingBag, ShoppingCart } from "lucide-react"
+import { ShoppingBag, ShoppingCart, Trash2 } from "lucide-react"
 
 import { SideSheet } from "@/components/SideSheet"
 import { Button } from "@/components/ui/button"
-import { getFavourites, subscribeStore, addToCart, type FavouriteItem } from "@/lib/store"
+import { getFavourites, subscribeStore, addToCart, toggleFavourite, type FavouriteItem } from "@/lib/store"
 import { useLanguage } from "@/components/LanguageProvider"
 
 type FavouritesSheetProps = {
@@ -74,6 +74,17 @@ export function FavouritesSheet({ open, onOpenChange }: FavouritesSheetProps) {
                     ${it.price.toFixed(2)}
                   </div>
                 </div>
+
+                <button
+                  className="absolute right-2 top-2 p-1.5 text-muted-foreground transition-colors hover:text-destructive"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    toggleFavourite(it)
+                  }}
+                  title="Remove from favourites"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
 
                 <div className="mt-2">
                   <Button

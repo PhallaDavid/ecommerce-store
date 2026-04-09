@@ -19,6 +19,8 @@ export type CartItem = {
   image: string
   price: number
   qty: number
+  color?: string
+  size?: string
 }
 
 const FAVOURITES_KEY = "r4kies:favourites" 
