@@ -90,46 +90,59 @@ function OrderCard({ order, statusConfig }: { order: Order; statusConfig: any })
   }
 
   return (
-    <div className="rounded-2xl border bg-card overflow-hidden">
+    <div className="group rounded-[2rem] border bg-background shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500 overflow-hidden">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b">
-        <div className="space-y-0.5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("order.id")}</p>
-          <p className="text-sm font-bold font-mono text-primary">{order.id}</p>
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6 border-b bg-muted/5">
+        <div className="space-y-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70">{t("order.id")}</p>
+          <p className="text-sm font-bold font-mono text-primary flex items-center gap-1.5">
+            <Hash className="h-3.5 w-3.5 opacity-50" />
+            {order.id}
+          </p>
         </div>
-        <div className="space-y-0.5 text-right">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("order.date")}</p>
-          <p className="text-sm font-semibold">{new Date(order.date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
+        <div className="space-y-1 text-right sm:text-left">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70">{t("order.date")}</p>
+          <p className="text-sm font-bold text-foreground/80">{new Date(order.date).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
         </div>
-        <div className="space-y-0.5 text-right">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t("order.total")}</p>
-          <p className="text-sm font-bold text-primary">${order.total.toFixed(2)}</p>
+        <div className="hidden sm:block space-y-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70">{t("order.total")}</p>
+          <p className="text-sm font-black text-primary">${order.total.toFixed(2)}</p>
         </div>
-        <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold", cfg.color)}>
+        <span className={cn("inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[11px] font-black uppercase tracking-wider shadow-sm transition-colors", cfg.color)}>
           <Icon className="h-3.5 w-3.5" /> {cfg.label}
         </span>
       </div>
 
       {/* Item preview */}
-      <div className="p-4 space-y-3">
-        <div className="flex items-center gap-3">
-          <div className="flex -space-x-2 overflow-hidden">
+      <div className="p-5 sm:p-6 space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="flex -space-x-3 overflow-hidden">
             {order.items.slice(0, 3).map((it) => (
-              <div key={it.id} className="relative inline-block ring-2 ring-background rounded-xl">
-                <img src={it.image} alt={it.name} className="h-12 w-12 rounded-xl object-cover bg-muted border" />
+              <div key={it.id} className="relative inline-block ring-4 ring-background rounded-2xl overflow-hidden shadow-sm">
+                <img src={it.image} alt={it.name} className="h-14 w-14 sm:h-16 sm:w-16 object-cover bg-muted border transition-transform duration-500 group-hover:scale-110" />
               </div>
             ))}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate text-foreground/80">
-              {order.items[0].name}
-              {order.items.length > 1 && (
-                <span className="text-muted-foreground font-normal ml-1">
-                   + {order.items.length - 1} {t("order.itemsCount")}
-                </span>
+            <p className="text-sm sm:text-base font-bold truncate text-foreground/90 leading-tight">
+              {order.items.length > 0 ? (
+                <>
+                  {order.items[0].name}
+                  {order.items.length > 1 && (
+                    <span className="text-muted-foreground font-medium ml-1.5 inline-flex items-center">
+                       + {order.items.length - 1} {t("order.itemsCount")}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-muted-foreground font-medium italic opacity-60">No items listed</span>
               )}
             </p>
-            <p className="text-xs text-muted-foreground font-medium">{order.payment}</p>
+            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground font-semibold">
+              <CreditCard className="h-3 w-3" />
+              {order.payment}
+              <span className="sm:hidden ml-auto font-black text-primary text-sm">${order.total.toFixed(2)}</span>
+            </div>
           </div>
         </div>
 
@@ -163,8 +176,9 @@ function OrderCard({ order, statusConfig }: { order: Order; statusConfig: any })
         {/* Actions */}
         <div className="flex items-center gap-2 border-t pt-3 mt-1">
           <Link href={`/orders/${order.id}`}
-            className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-primary transition-colors">
-            <Eye className="h-3.5 w-3.5" /> {t("order.viewDetails")}
+            className="group/link flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-all">
+            <Eye className="h-4 w-4 transition-transform group-hover/link:scale-125" /> 
+            <span>{t("order.viewDetails")}</span>
           </Link>
           <div className="flex-1" />
           {order.status === "delivered" && (
@@ -230,21 +244,27 @@ export default function OrdersPage() {
         const res = await api.get("/orders")
         // Mapping real API data to our UI component types
         const rawOrders = Array.isArray(res.data) ? res.data : (res.data?.data || [])
-        const mappedOrders: Order[] = rawOrders.map((o: any) => ({
-          id: o.order_number || o.id,
-          date: o.created_at || o.date,
-          status: (o.status?.toLowerCase() || "pending") as OrderStatus,
-          total: Number(o.total_price || o.total),
-          payment: o.payment_method || "Unknown",
-          address: o.address || o.location_name || "N/A",
-          items: (o.items || []).map((it: any) => ({
-            id: it.product_id || it.id,
-            name: it.product?.name || it.name,
-            qty: it.quantity || it.qty,
-            price: Number(it.price),
-            image: fixImageUrl(it.product?.image || it.image)
-          }))
-        }))
+        const mappedOrders: Order[] = rawOrders.map((o: any) => {
+          const apiStatus = (o.status || "pending").toLowerCase()
+          const validStatuses: OrderStatus[] = ["pending", "processing", "shipped", "delivered", "cancelled"]
+          const status = validStatuses.includes(apiStatus as OrderStatus) ? (apiStatus as OrderStatus) : "pending"
+          
+          return {
+            id: o.order_number || o.id,
+            date: o.created_at || o.date,
+            status: status,
+            total: Number(o.total_price || o.total || 0),
+            payment: o.payment_method || "Unknown",
+            address: o.address || o.location_name || "N/A",
+            items: (o.items || []).map((it: any) => ({
+              id: it.product_id || it.id,
+              name: (it.product?.name || it.name || "Product").trim(),
+              qty: it.quantity || it.qty || 1,
+              price: Number(it.price || it.price_at_purchase || 0),
+              image: fixImageUrl(it.product?.image || it.image || it.thumbnail || "")
+            }))
+          }
+        })
         setOrders(mappedOrders)
       } catch (err) {
         console.error("Failed to fetch orders", err)
@@ -298,21 +318,21 @@ export default function OrdersPage() {
               value={search} 
               onChange={e => setSearch(e.target.value)} 
               placeholder={t("orders.searchPlaceholder")}
-              className="w-full rounded-2xl border bg-card py-2.5 pl-10 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm" 
+              className="w-full rounded-full border bg-card py-2.5 pl-10 pr-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all shadow-sm" 
             />
           </div>
         </div>
 
         {/* Status tabs */}
-        <div className="mb-8 flex gap-2 p-1 bg-muted/50 rounded-2xl overflow-x-auto no-scrollbar">
+        <div className="mb-8 flex gap-2 p-1.5 bg-muted/40 rounded-[2rem] overflow-x-auto no-scrollbar border">
           {tabs.map((t) => (
             <button key={t.value} type="button" onClick={() => setTab(t.value)}
-              className={cn("whitespace-nowrap flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition-all shadow-sm",
-                tab === t.value ? "bg-background text-primary" : "text-muted-foreground hover:bg-background/50 hover:text-foreground"
+              className={cn("whitespace-nowrap flex items-center gap-2 rounded-[1.5rem] px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all",
+                tab === t.value ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:bg-background/50 hover:text-foreground"
               )}>
               {t.label}
-              <span className={cn("inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-black tabular-nums",
-                tab === t.value ? "bg-primary/10 text-primary" : "bg-muted-foreground/10 text-muted-foreground"
+              <span className={cn("inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-2 text-[10px] font-black tabular-nums border",
+                tab === t.value ? "bg-primary/10 text-primary border-primary/20" : "bg-muted-foreground/10 text-muted-foreground border-transparent"
               )}>
                 {t.count}
               </span>

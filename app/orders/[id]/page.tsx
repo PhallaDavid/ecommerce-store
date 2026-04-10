@@ -65,7 +65,20 @@ export default function OrderDetailPage() {
       setLoading(true)
       try {
         const res = await api.get(`/orders/${params.id}`)
-        setData(res.data)
+        const rawData = res.data
+        if (rawData && rawData.order) {
+          // Robust mapping
+          const mappedItems = (rawData.items || []).map((it: any) => ({
+            ...it,
+            name: (it.name || "Product").trim(),
+            price_at_purchase: it.price_at_purchase || it.price || "0",
+            thumbnail: it.thumbnail || it.image || ""
+          }))
+          setData({
+            ...rawData,
+            items: mappedItems
+          })
+        }
       } catch (err: any) {
         setError(err.response?.data?.message || t("common.error"))
       } finally {
@@ -100,9 +113,9 @@ export default function OrderDetailPage() {
   )
 
   const { order, items } = data
-  const statusCfg = STATUS_CONFIG[order.status]
+  const statusCfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending
   const StatusIcon = statusCfg.icon
-  const statusLabel = language === "kh" ? statusCfg.label_kh : statusCfg.label_en
+  const statusLabel = t(`order.status.${order.status}`)
 
   const handleReorder = () => {
     items.forEach(it => {
@@ -180,7 +193,7 @@ export default function OrderDetailPage() {
                   <Store className="h-4 w-4 text-primary" />
                   {t("order.items")}
                 </h2>
-                <Badge variant="secondary" className="rounded-lg font-bold">{items.length} {t("order.itemsCount")}</Badge>
+                <Badge variant="secondary" className="rounded-xl font-black bg-primary/10 text-primary border-none px-3 py-1">{items.length} {t("order.itemsCount")}</Badge>
               </div>
               
               <div className="divide-y divide-dashed">
@@ -198,7 +211,7 @@ export default function OrderDetailPage() {
                           <Badge variant="secondary" className="rounded-md font-black text-[10px] bg-muted/60">x{it.quantity}</Badge>
                         </div>
                       </div>
-                      <p className="text-lg font-black text-primary">${Number(it.price_at_purchase).toFixed(2)}</p>
+                      <p className="text-xl font-black text-primary">${Number(it.price_at_purchase).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
