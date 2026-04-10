@@ -4,12 +4,13 @@ import * as React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import axios from "axios"
-import { Eye, EyeOff, Lock, Smartphone, ArrowLeft, GalleryVerticalEndIcon } from "lucide-react"
+import { Eye, EyeOff, Lock, ArrowLeft, GalleryVerticalEndIcon } from "lucide-react"
 
 import api from "@/utils/axios"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field"
+import { PhoneInput, type Country } from "@/components/ui/phone-input"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useLanguage } from "@/components/LanguageProvider"
@@ -22,6 +23,7 @@ function LoginFormContent() {
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState("")
   const [phone, setPhone] = React.useState("")
+  const [country, setCountry] = React.useState<Country>({ code: "KH", dial: "+855", flag: "🇰🇭", name: "Cambodia" })
   const [password, setPassword] = React.useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +32,7 @@ function LoginFormContent() {
     setIsLoading(true)
 
     try {
-      const response = await api.post("/auth/login", { phone, password })
+      const response = await api.post("/auth/login", { phone: `${country.dial}${phone}`, password })
       const token = response.data?.token
       if (typeof token === "string" && token) {
         localStorage.setItem("auth_token", token)
@@ -110,26 +112,19 @@ function LoginFormContent() {
                 <div className="grid gap-4">
                   <Field>
                     <FieldLabel htmlFor="phone">{t("auth.phone")}</FieldLabel>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        <Smartphone className="h-4 w-4" />
-                      </span>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="016763049"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                        required
-                        className="pl-9 h-11 bg-background"
-                      />
-                    </div>
+                    <PhoneInput
+                      id="phone"
+                      value={phone}
+                      onChange={(val, c) => { setPhone(val); setCountry(c) }}
+                      defaultCountry="KH"
+                      required
+                    />
                   </Field>
 
                   <Field>
                     <div className="flex items-center justify-between">
                       <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
-                      <Link href="#" className="text-xs font-medium text-primary hover:underline">
+                      <Link href="/auth/forgot-password" className="text-xs font-medium text-primary hover:underline">
                         {t("auth.forgotPassword")}
                       </Link>
                     </div>

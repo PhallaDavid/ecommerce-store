@@ -132,7 +132,7 @@ export function AuthDialog({ isOpen, onClose }: AuthDialogProps) {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="016763049"
+                  placeholder="Phone Number"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                   required

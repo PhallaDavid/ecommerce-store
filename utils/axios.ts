@@ -5,9 +5,6 @@ const baseURL =
   (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim() || DEFAULT_API_BASE_URL;
 
 if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
-  // NEXT_PUBLIC_* vars are baked into the client bundle at build time.
-  // If this shows up in production, the Vercel project is missing the env var
-  // or the deployment wasn't rebuilt after setting it.
   console.warn(
     `[api] NEXT_PUBLIC_API_BASE_URL is not set; falling back to ${DEFAULT_API_BASE_URL}`,
   );

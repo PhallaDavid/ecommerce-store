@@ -4,36 +4,38 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import axios from "axios"
-import { Eye, EyeOff, Lock, Smartphone, ArrowLeft, UserPlus, GalleryVerticalEndIcon, ChevronLeft } from "lucide-react"
+import { Eye, EyeOff, Lock, ArrowLeft, GalleryVerticalEndIcon, ChevronLeft, KeyRound, CheckCircle2 } from "lucide-react"
 
 import api from "@/utils/axios"
 import { Button } from "@/components/ui/button"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { PhoneInput, type Country } from "@/components/ui/phone-input"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { useLanguage } from "@/components/LanguageProvider"
 
-type Step = "phone" | "otp" | "details" | "success"
+type Step = "phone" | "otp" | "newPassword" | "success"
 
-export default function RegisterPage() {
+export default function ForgotPasswordPage() {
   const { t } = useLanguage()
   const router = useRouter()
 
   const [step, setStep] = React.useState<Step>("phone")
   const [showPassword, setShowPassword] = React.useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState("")
 
   // Fields
   const [phone, setPhone] = React.useState("")
+  const [country, setCountry] = React.useState<Country>({ code: "KH", dial: "+855", flag: "🇰🇭", name: "Cambodia" })
   const [otp, setOtp] = React.useState(["", "", "", "", "", ""])
-  const [name, setName] = React.useState("")
-  const [password, setPassword] = React.useState("")
+  const [newPassword, setNewPassword] = React.useState("")
+  const [confirmPassword, setConfirmPassword] = React.useState("")
 
   // OTP resend timer
   const [resendTimer, setResendTimer] = React.useState(0)
   const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null)
-
   const otpRefs = React.useRef<(HTMLInputElement | null)[]>([])
 
   const startTimer = () => {
@@ -65,14 +67,15 @@ export default function RegisterPage() {
     toast.error(message)
   }
 
-  // Step 1: send OTP
+  // Step 1: Send OTP
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
+    const fullPhone = `${country.dial}${phone}`
     try {
-      await api.post("/auth/send-otp", { phone })
-      toast.success("OTP sent!")
+      await api.post("/auth/forgot-password-send-otp", { phone: fullPhone })
+      toast.success("Verification code sent!")
       startTimer()
       setOtp(["", "", "", "", "", ""])
       setStep("otp")
@@ -87,9 +90,10 @@ export default function RegisterPage() {
   const handleResendOtp = async () => {
     setError("")
     setIsLoading(true)
+    const fullPhone = `${country.dial}${phone}`
     try {
-      await api.post("/auth/send-otp", { phone })
-      toast.success("OTP resent!")
+      await api.post("/auth/forgot-password-send-otp", { phone: fullPhone })
+      toast.success("Code resent!")
       startTimer()
       setOtp(["", "", "", "", "", ""])
       otpRefs.current[0]?.focus()
@@ -100,7 +104,7 @@ export default function RegisterPage() {
     }
   }
 
-  // Step 2: verify OTP
+  // Step 2: Verify OTP via API then move to new password step
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -110,10 +114,11 @@ export default function RegisterPage() {
       return
     }
     setIsLoading(true)
+    const fullPhone = `${country.dial}${phone}`
     try {
-      await api.post("/auth/verify-otp", { phone, otp: otpCode })
+      await api.post("/auth/verify-otp", { phone: fullPhone, otp: otpCode })
       toast.success("OTP verified!")
-      setStep("details")
+      setStep("newPassword")
     } catch (err) {
       handleError(err)
     } finally {
@@ -121,16 +126,25 @@ export default function RegisterPage() {
     }
   }
 
-  // Step 3: register with name + password
-  const handleRegister = async (e: React.FormEvent) => {
+  // Step 3: Reset password
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
     setIsLoading(true)
+    const fullPhone = `${country.dial}${phone}`
     try {
-      await api.post("/auth/register", { name, phone, password, otp: otp.join("") })
-      toast.success("Account created successfully!")
+      await api.post("/auth/forgot-password", {
+        phone: fullPhone,
+        otp: otp.join(""),
+        newPassword,
+      })
+      toast.success("Password reset successfully!")
       setStep("success")
-      setTimeout(() => router.push("/auth/login"), 2000)
+      setTimeout(() => router.push("/auth/login"), 2500)
     } catch (err) {
       handleError(err)
     } finally {
@@ -162,22 +176,25 @@ export default function RegisterPage() {
     otpRefs.current[Math.min(pasted.length, 5)]?.focus()
   }
 
-  const STEPS: Step[] = ["phone", "otp", "details"]
+  const STEPS: Step[] = ["phone", "otp", "newPassword"]
   const stepIndex = STEPS.indexOf(step)
 
+  // Success screen
   if (step === "success") {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-sm space-y-6 text-center">
           <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-sm border border-green-200">
-            <UserPlus className="h-6 w-6" />
+            <CheckCircle2 className="h-6 w-6" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold">{t("auth.createAccount")}!</h1>
-            <p className="text-muted-foreground">{t("auth.accountCreated")}</p>
+            <h1 className="text-2xl font-bold">Password Reset!</h1>
+            <p className="text-muted-foreground">
+              Your password has been reset successfully. Redirecting to login…
+            </p>
           </div>
           <Button asChild className="w-full h-11">
-            <Link href="/auth/login">{t("auth.continueToLogin")}</Link>
+            <Link href="/auth/login">{t("auth.login")}</Link>
           </Button>
         </div>
       </div>
@@ -187,11 +204,11 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted/30 p-6 md:p-10">
       <Link
-        href="/"
+        href="/auth/login"
         className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        {t("common.backToHome")}
+        Back to Login
       </Link>
 
       <div className="w-full max-w-sm">
@@ -216,8 +233,8 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Back button for otp/details steps */}
-            {(step === "otp" || step === "details") && (
+            {/* Back button for later steps */}
+            {(step === "otp" || step === "newPassword") && (
               <button
                 type="button"
                 onClick={() => { setError(""); setStep(step === "otp" ? "phone" : "otp") }}
@@ -244,31 +261,21 @@ export default function RegisterPage() {
                         <GalleryVerticalEndIcon className="size-6" />
                       </div>
                     </Link>
-                    <h1 className="text-2xl font-bold tracking-tight mt-2">{t("auth.createAccount")}</h1>
+                    <h1 className="text-2xl font-bold tracking-tight mt-2">Forgot Password</h1>
                     <FieldDescription>
-                      {t("auth.hasAccount")}{" "}
-                      <Link href="/auth/login" className="font-semibold text-primary hover:underline">
-                        {t("auth.signIn")}
-                      </Link>
+                      Enter your phone number and we&apos;ll send you a verification code.
                     </FieldDescription>
                   </div>
 
                   <Field>
                     <FieldLabel htmlFor="phone">{t("auth.phone")}</FieldLabel>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        <Smartphone className="h-4 w-4" />
-                      </span>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="Phone Number"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                        required
-                        className="pl-9 h-11 bg-background"
-                      />
-                    </div>
+                    <PhoneInput
+                      id="phone"
+                      value={phone}
+                      onChange={(val, c) => { setPhone(val); setCountry(c) }}
+                      defaultCountry="KH"
+                      required
+                    />
                   </Field>
 
                   <Button type="submit" className="w-full h-11 text-base" disabled={isLoading}>
@@ -281,6 +288,13 @@ export default function RegisterPage() {
                       "Send verification code"
                     )}
                   </Button>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    Remember your password?{" "}
+                    <Link href="/auth/login" className="font-semibold text-primary hover:underline">
+                      {t("auth.signIn")}
+                    </Link>
+                  </p>
                 </FieldGroup>
               </form>
             )}
@@ -308,7 +322,7 @@ export default function RegisterPage() {
                         value={digit}
                         onChange={e => handleOtpChange(i, e.target.value)}
                         onKeyDown={e => handleOtpKeyDown(i, e)}
-                        className="w-11 h-13 text-center text-xl font-semibold border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-11 text-center text-xl font-semibold border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                         style={{ height: "52px" }}
                       />
                     ))}
@@ -330,7 +344,7 @@ export default function RegisterPage() {
                     )}
                   </div>
 
-                  <Button type="submit" className="w-full h-11 text-base" disabled={isLoading}>
+                  <Button type="submit" className="w-full h-11 text-base" disabled={isLoading || otp.join("").length < 6}>
                     {isLoading ? (
                       <div className="flex items-center justify-center gap-2">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -344,48 +358,33 @@ export default function RegisterPage() {
               </form>
             )}
 
-            {/* ── STEP 3: Name + Password ── */}
-            {step === "details" && (
-              <form onSubmit={handleRegister}>
+            {/* ── STEP 3: New Password ── */}
+            {step === "newPassword" && (
+              <form onSubmit={handleResetPassword}>
                 <FieldGroup className="gap-6">
-                  <div className="text-center space-y-1">
-                    <h1 className="text-2xl font-bold tracking-tight">Almost done</h1>
-                    <FieldDescription>Set up your name and password</FieldDescription>
+                  <div className="flex flex-col items-center gap-2 text-center">
+                    <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                      <KeyRound className="size-5" />
+                    </div>
+                    <h1 className="text-2xl font-bold tracking-tight mt-2">New Password</h1>
+                    <FieldDescription>Choose a strong password for your account.</FieldDescription>
                   </div>
 
                   <div className="grid gap-4">
                     <Field>
-                      <FieldLabel htmlFor="name">{t("auth.fullName")}</FieldLabel>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                          <UserPlus className="h-4 w-4" />
-                        </span>
-                        <Input
-                          id="name"
-                          type="text"
-                          placeholder="John Doe"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          required
-                          className="pl-9 h-11 bg-background"
-                        />
-                      </div>
-                    </Field>
-
-                    <Field>
-                      <FieldLabel htmlFor="password">{t("auth.password")}</FieldLabel>
+                      <FieldLabel htmlFor="newPassword">New Password</FieldLabel>
                       <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                           <Lock className="h-4 w-4" />
                         </span>
                         <Input
-                          id="password"
+                          id="newPassword"
                           type={showPassword ? "text" : "password"}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
                           required
                           className="pl-9 pr-10 h-11 bg-background"
-                          minLength={8}
+                          minLength={6}
                         />
                         <button
                           type="button"
@@ -393,6 +392,35 @@ export default function RegisterPage() {
                           className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-md transition-colors"
                         >
                           {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+                      </div>
+                    </Field>
+
+                    <Field>
+                      <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                          <Lock className="h-4 w-4" />
+                        </span>
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          className="pl-9 pr-10 h-11 bg-background"
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-md transition-colors"
+                        >
+                          {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4 text-muted-foreground" />
                           ) : (
                             <Eye className="h-4 w-4 text-muted-foreground" />
@@ -410,7 +438,7 @@ export default function RegisterPage() {
                         <span>{t("common.loading")}</span>
                       </div>
                     ) : (
-                      t("auth.register")
+                      "Reset Password"
                     )}
                   </Button>
                 </FieldGroup>
@@ -419,10 +447,10 @@ export default function RegisterPage() {
 
           </div>
 
-          {/* <FieldDescription className="text-center px-4">
+          <FieldDescription className="text-center px-4">
             {t("auth.byClicking")} <Link href="#" className="underline">{t("auth.terms")}</Link>{" "}
             {t("auth.privacy")}.
-          </FieldDescription> */}
+          </FieldDescription>
         </div>
       </div>
     </div>
