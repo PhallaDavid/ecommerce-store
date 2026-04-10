@@ -152,6 +152,7 @@ const translations = {
     "order.status.shipped": "Shipped",
     "order.status.delivered": "Delivered",
     "order.status.cancelled": "Cancelled",
+    "order.payNow": "Pay Now",
 
     // Cart / Sheets
     "cart.title": "Shopping Cart",
@@ -383,6 +384,7 @@ const translations = {
     "order.status.shipped": "កំពុងដឹកជញ្ជូន",
     "order.status.delivered": "បានដឹកជញ្ជូន",
     "order.status.cancelled": "បានបោះបង់",
+    "order.payNow": "ទូទាត់ឥឡូវនេះ",
 
     // Cart / Sheets
     "cart.title": "កន្ត្រកទំនិញ",

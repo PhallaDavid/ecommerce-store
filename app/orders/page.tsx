@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import Link from "next/link"
 import {
   ChevronRight, Package, Truck, CheckCircle2, XCircle,
-  Clock, ChevronDown, RotateCcw, Eye, Search, Hash, CreditCard
+  Clock, ChevronDown, RotateCcw, Eye, Search, Hash, CreditCard, Smartphone
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -13,6 +13,7 @@ import { addToCart } from "@/lib/store"
 import { useLanguage } from "@/components/LanguageProvider"
 import api from "@/utils/axios"
 import { fixImageUrl } from "@/lib/store"
+import { handleABAPayment } from "@/lib/payment"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled"
@@ -82,8 +83,19 @@ function OrderProgress({ status, statusConfig }: { status: OrderStatus; statusCo
 function OrderCard({ order, statusConfig }: { order: Order; statusConfig: any }) {
   const { t } = useLanguage()
   const [expanded, setExpanded] = useState(false)
+  const [paying, setPaying] = useState(false)
   const cfg = statusConfig[order.status]
   const Icon = cfg.icon
+
+  async function handlePay() {
+    setPaying(true)
+    try {
+      await handleABAPayment(order.id)
+    } catch (err) {
+      alert(t("common.error"))
+      setPaying(false)
+    }
+  }
 
   function reorder() {
     order.items.forEach(it => addToCart({ id: String(it.id), name: it.name, href: `/products/${it.id}`, image: it.image, price: it.price }, it.qty))
@@ -189,6 +201,21 @@ function OrderCard({ order, statusConfig }: { order: Order; statusConfig: any })
           {(order.status === "shipped" || order.status === "processing") && (
             <Button size="sm" variant="outline" className="text-xs font-bold gap-1.5 h-8 rounded-xl px-4">
               <Truck className="h-3.5 w-3.5" /> {t("order.track")}
+            </Button>
+          )}
+          {order.status === "pending" && order.payment === "ABA" && (
+            <Button 
+              size="sm" 
+              className="text-xs font-bold gap-1.5 h-8 rounded-xl px-4 bg-[#e31837] hover:bg-[#c1142d] text-white shadow-lg shadow-red-500/20"
+              onClick={handlePay}
+              disabled={paying}
+            >
+              {paying ? (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              ) : (
+                <Smartphone className="h-3.5 w-3.5" />
+              )}
+              {t("order.payNow")}
             </Button>
           )}
         </div>

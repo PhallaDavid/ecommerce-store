@@ -297,10 +297,17 @@ export default function CheckoutPage() {
         }))
       }
 
-      await api.post("/orders/checkout", payload)
+      const res = await api.post("/orders/checkout", payload)
+      const orderId = res.data.order_id
       
       setCart([])
-      setStep(3)
+
+      if (payMethod === "aba") {
+        const { handleABAPayment } = await import("@/lib/payment")
+        await handleABAPayment(orderId)
+      } else {
+        setStep(3)
+      }
     } catch (e: any) {
       alert(e.response?.data?.message || t("common.error"))
     } finally {
