@@ -14,6 +14,7 @@ import { useLanguage } from "@/components/LanguageProvider"
 import api from "@/utils/axios"
 import { fixImageUrl } from "@/lib/store"
 import { handleABAPayment } from "@/lib/payment"
+import { ABAPaymentModal } from "@/components/ABAPaymentModal"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled"
@@ -80,7 +81,7 @@ function OrderProgress({ status, statusConfig }: { status: OrderStatus; statusCo
 }
 
 // ── Order card ─────────────────────────────────────────────────────────────────
-function OrderCard({ order, statusConfig }: { order: Order; statusConfig: any }) {
+function OrderCard({ order, statusConfig, onPay }: { order: Order; statusConfig: any; onPay: (data: any) => void }) {
   const { t } = useLanguage()
   const [expanded, setExpanded] = useState(false)
   const [paying, setPaying] = useState(false)
@@ -90,9 +91,16 @@ function OrderCard({ order, statusConfig }: { order: Order; statusConfig: any })
   async function handlePay() {
     setPaying(true)
     try {
-      await handleABAPayment(order.id)
+      const data = await handleABAPayment(order.id)
+      // Pass data plus extra info for the modal
+      onPay({
+        ...data,
+        id: order.id,
+        amount: order.total
+      })
     } catch (err) {
       alert(t("common.error"))
+    } finally {
       setPaying(false)
     }
   }
@@ -261,44 +269,44 @@ export default function OrdersPage() {
   const [search, setSearch] = useState("")
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-
   const statusConfig = getStatusConfig(t)
+  const [modalData, setModalData] = useState<any>(null)
+
+  const fetchOrders = async (silent = false) => {
+    if (!silent) setLoading(true)
+    try {
+      const res = await api.get("/orders")
+      const rawOrders = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+      const mappedOrders: Order[] = rawOrders.map((o: any) => {
+        const apiStatus = (o.status || "pending").toLowerCase()
+        const validStatuses: OrderStatus[] = ["pending", "processing", "shipped", "delivered", "cancelled"]
+        const status = validStatuses.includes(apiStatus as OrderStatus) ? (apiStatus as OrderStatus) : "pending"
+        
+        return {
+          id: o.order_number || o.id,
+          date: o.created_at || o.date,
+          status: status,
+          total: Number(o.total_price || o.total || 0),
+          payment: o.payment_method || "Unknown",
+          address: o.address || o.location_name || "N/A",
+          items: (o.items || []).map((it: any) => ({
+            id: it.product_id || it.id,
+            name: (it.product?.name || it.name || "Product").trim(),
+            qty: it.quantity || it.qty || 1,
+            price: Number(it.price || it.price_at_purchase || 0),
+            image: fixImageUrl(it.product?.image || it.image || it.thumbnail || "")
+          }))
+        }
+      })
+      setOrders(mappedOrders)
+    } catch (err) {
+      console.error("Failed to fetch orders", err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   React.useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true)
-      try {
-        const res = await api.get("/orders")
-        // Mapping real API data to our UI component types
-        const rawOrders = Array.isArray(res.data) ? res.data : (res.data?.data || [])
-        const mappedOrders: Order[] = rawOrders.map((o: any) => {
-          const apiStatus = (o.status || "pending").toLowerCase()
-          const validStatuses: OrderStatus[] = ["pending", "processing", "shipped", "delivered", "cancelled"]
-          const status = validStatuses.includes(apiStatus as OrderStatus) ? (apiStatus as OrderStatus) : "pending"
-          
-          return {
-            id: o.order_number || o.id,
-            date: o.created_at || o.date,
-            status: status,
-            total: Number(o.total_price || o.total || 0),
-            payment: o.payment_method || "Unknown",
-            address: o.address || o.location_name || "N/A",
-            items: (o.items || []).map((it: any) => ({
-              id: it.product_id || it.id,
-              name: (it.product?.name || it.name || "Product").trim(),
-              qty: it.quantity || it.qty || 1,
-              price: Number(it.price || it.price_at_purchase || 0),
-              image: fixImageUrl(it.product?.image || it.image || it.thumbnail || "")
-            }))
-          }
-        })
-        setOrders(mappedOrders)
-      } catch (err) {
-        console.error("Failed to fetch orders", err)
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchOrders()
   }, [t])
 
@@ -385,9 +393,28 @@ export default function OrdersPage() {
               </Button>
             </div>
           ) : (
-            filtered.map((order) => <OrderCard key={String(order.id)} order={order} statusConfig={statusConfig} />)
+            filtered.map((order) => (
+              <OrderCard 
+                key={String(order.id)} 
+                order={order} 
+                statusConfig={statusConfig} 
+                onPay={(data) => setModalData(data)}
+              />
+            ))
           )}
         </div>
+
+        {/* ABA Payment Modal */}
+        <ABAPaymentModal 
+          isOpen={!!modalData}
+          onClose={() => setModalData(null)}
+          qrImage={modalData?.qrImage}
+          qrString={modalData?.qrString}
+          deeplink={modalData?.abapay_deeplink}
+          orderId={modalData?.id}
+          amount={modalData?.amount}
+          onSuccess={() => fetchOrders(true)}
+        />
       </div>
     </div>
   )

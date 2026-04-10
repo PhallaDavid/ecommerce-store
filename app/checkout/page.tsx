@@ -35,6 +35,7 @@ import {
 } from "@/lib/store"
 import { useLanguage } from "@/components/LanguageProvider"
 import api from "@/utils/axios"
+import { ABAPaymentModal } from "@/components/ABAPaymentModal"
 
 // Dynamic import — Leaflet cannot run on SSR
 const LocationPicker = dynamic(
@@ -237,6 +238,7 @@ export default function CheckoutPage() {
   })
 
   const [profileLoading, setProfileLoading] = useState(false)
+  const [modalData, setModalData] = useState<any>(null)
 
   useEffect(() => {
     setItems(getCart())
@@ -304,7 +306,12 @@ export default function CheckoutPage() {
 
       if (payMethod === "aba") {
         const { handleABAPayment } = await import("@/lib/payment")
-        await handleABAPayment(orderId)
+        const data = await handleABAPayment(orderId)
+        setModalData({
+          ...data,
+          id: orderId,
+          amount: total
+        })
       } else {
         setStep(3)
       }
@@ -673,6 +680,20 @@ export default function CheckoutPage() {
           </div>
         )}
       </div>
+
+      <ABAPaymentModal 
+        isOpen={!!modalData}
+        onClose={() => setModalData(null)}
+        qrImage={modalData?.qrImage}
+        qrString={modalData?.qrString}
+        deeplink={modalData?.abapay_deeplink}
+        orderId={modalData?.id}
+        amount={modalData?.amount}
+        onSuccess={() => {
+          setModalData(null)
+          setStep(3)
+        }}
+      />
     </div>
   )
 }
